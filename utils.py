@@ -196,16 +196,88 @@ def L63PatchDataExtraction(xt,RMD):
   x_test_obs  = (X_test_obs - meanTr) / stdTr
   x_val_obs  = (X_val_obs - meanTr) / stdTr
 
-  return x_train, x_val, x_test, x_train_obs, x_val_obs,x_test_obs, x_train_missing, x_val_missing,x_test_missing, mask_train,mask_val, mask_test
 
-def visualisation_data(x_train,x_train_obs,idx):
+  flagInit = 1
+  if flagInit == 0: 
+    X_train_Init = mask_train * X_train_obs + (1. - mask_train) * (np.zeros(X_train_missing.shape) + meanTr)
+    X_test_Init  = mask_test * X_test_obs + (1. - mask_test) * (np.zeros(X_test_missing.shape) + meanTr)
+  else:
+    X_train_Init = np.zeros(X_train.shape)
+    for ii in range(0,X_train.shape[0]):
+      # Initial linear interpolation for each component
+      XInit = np.zeros((X_train.shape[1],X_train.shape[2]))
 
-  plt.figure(figsize=(10,5))
+      for kk in range(0,3):
+        indt  = np.where( mask_train[ii,kk,:] == 1.0 )[0]
+        indt_ = np.where( mask_train[ii,kk,:] == 0.0 )[0]
+
+        if len(indt) > 1:
+          indt_[ np.where( indt_ < np.min(indt)) ] = np.min(indt)
+          indt_[ np.where( indt_ > np.max(indt)) ] = np.max(indt)
+          fkk = scipy.interpolate.interp1d(indt, X_train_obs[ii,kk,indt])
+          XInit[kk,indt]  = X_train_obs[ii,kk,indt]
+          XInit[kk,indt_] = fkk(indt_)
+        else:
+          XInit = XInit + meanTr
+
+      X_train_Init[ii,:,:] = XInit
+
+    X_test_Init = np.zeros(X_test.shape)
+    for ii in range(0,X_test.shape[0]):
+      # Initial linear interpolation for each component
+      XInit = np.zeros((X_test.shape[1],X_test.shape[2]))
+
+      for kk in range(0,3):
+        indt  = np.where( mask_test[ii,kk,:] == 1.0 )[0]
+        indt_ = np.where( mask_test[ii,kk,:] == 0.0 )[0]
+
+        if len(indt) > 1:
+          indt_[ np.where( indt_ < np.min(indt)) ] = np.min(indt)
+          indt_[ np.where( indt_ > np.max(indt)) ] = np.max(indt)
+          fkk = scipy.interpolate.interp1d(indt, X_test_obs[ii,kk,indt])
+          XInit[kk,indt]  = X_test_obs[ii,kk,indt]
+          XInit[kk,indt_] = fkk(indt_)
+        else:
+          XInit = XInit + meanTr
+
+      X_test_Init[ii,:,:] = XInit
+
+      X_val_Init = np.zeros(X_val.shape)
+    for ii in range(0,X_val.shape[0]):
+      # Initial linear interpolation for each component
+      XInit = np.zeros((X_val.shape[1],X_val.shape[2]))
+
+      for kk in range(0,3):
+        indt  = np.where( mask_val[ii,kk,:] == 1.0 )[0]
+        indt_ = np.where( mask_val[ii,kk,:] == 0.0 )[0]
+
+        if len(indt) > 1:
+          indt_[ np.where( indt_ < np.min(indt)) ] = np.min(indt)
+          indt_[ np.where( indt_ > np.max(indt)) ] = np.max(indt)
+          fkk = scipy.interpolate.interp1d(indt, X_val_obs[ii,kk,indt])
+          XInit[kk,indt]  = X_val_obs[ii,kk,indt]
+          XInit[kk,indt_] = fkk(indt_)
+        else:
+          XInit = XInit + meanTr
+
+      X_test_Init[ii,:,:] = XInit
+      
+
+    x_train_Init = ( X_train_Init - meanTr ) / stdTr
+    x_val_Init = ( X_val_Init - meanTr ) / stdTr
+    x_test_Init = ( X_test_Init - meanTr ) / stdTr
+
+  return x_train, x_val, x_test, x_train_obs, x_val_obs,x_test_obs, x_train_missing, x_val_missing,x_test_missing,mask_train,mask_val,mask_test,x_train_Init,x_val_Init, x_test_Init, meanTr, stdTr
+
+def visualisation_data(x_train,x_train_obs,x_train_Init,idx):
+
+  plt.figure(figsize=(20,10))
   for jj in range(0,3):
     indjj = 131+jj
     plt.subplot(indjj)
     plt.plot(x_train_obs[idx,jj,:],'k.',label='Observations')
-    plt.plot(x_train[idx,jj,:],'b-',label='Simulated trajectory')
+    plt.plot(x_train[idx,jj,:],'-',label='Simulated trajectory',alpha=0.5)
+    plt.plot(x_train_Init[idx,jj,:],'-',label='Interpolated trajectory',alpha=0.5)
     plt.legend()
     plt.xlabel('Timestep')
   plt.savefig('visualisation_dataL63_2D.pdf')
