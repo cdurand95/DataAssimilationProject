@@ -293,6 +293,54 @@ def visualisation_data(x_train,x_train_obs,x_train_Init,idx):
   plt.legend()
   plt.savefig('visualisation_dataL63_3D.pdf')
 
+def plot_loss(model,max_epoch):
+    tot_loss=torch.FloatTensor(model_CNN.tot_loss)
+    tot_val_loss=torch.FloatTensor(model_CNN.tot_val_loss)
+    n=np.shape(tot_loss)[0]//max_epoch
+    m=np.shape(tot_val_loss)[0]//max_epoch
+    j,k=0,0
+    mean_loss=[]
+    mean_val_loss=[]
+    for i in range(max_epoch):
+        mean_loss.append(torch.mean(tot_loss[j:j+n]))
+        mean_val_loss.append(torch.mean(tot_val_loss[k:k+m]))
+        k+=m
+        j+=n
+        
+   
+    plt.semilogy(np.arange(1,max_epoch+1,1),mean_loss ,'-',label='Train')
+    plt.semilogy(np.arange(1,max_epoch+1,1),mean_val_loss ,'-',label='Validation')
+    plt.xlabel('steps')
+    plt.ylabel('MSE')
+    plt.legend()
+    plt.show()
+
+def plot_prediction(model,idx,dataset):
+  test= next(iter(dataset))
+
+  x_pred=model(test[1])
+
+  
+  x_obs=test[1][idx].detach().numpy()
+  x_pred=x_pred[idx].detach().numpy()
+  x_truth=test[3][idx].detach().numpy()
+
+
+  time_=np.arange(0,2,0.01)
+
+  plt.figure(figsize=(15,6))
+  for j in range(3):
+    plt.subplot(1,3,j+1)
+    plt.plot(time_,x_obs[j],'b.',alpha=0.2,label='obs')
+    plt.plot(time_,x_pred[j],alpha=1,label='Prediction')
+    plt.plot(time_,x_truth[j],alpha=0.7,label='Truth')
+    plt.xlabel('Time')
+    plt.ylabel('Position')
+    plt.title('Variable {}'.format(j))
+    plt.legend()
+  plt.savefig('Prediction.pdf')
+
+
 
 
 
