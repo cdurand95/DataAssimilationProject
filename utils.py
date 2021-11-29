@@ -46,14 +46,14 @@ class time_series:
   time   = 0.
 
 ## data generation: L63 series
-SD = Simulation_data()    
-y0 = np.array([8.0,0.0,30.0])
-tt = np.arange(SD.dt_integration,SD.nb_loop_test*SD.dt_integration+0.000001,SD.dt_integration)
-S = solve_ivp(fun=lambda t,y: AnDA_Lorenz_63(y,t,SD.parameters.sigma,SD.parameters.rho,SD.parameters.beta),t_span=[0.,5+0.000001],y0=y0,first_step=SD.dt_integration,t_eval=np.arange(0,5+0.000001,SD.dt_integration),method='RK45')
+#SD = Simulation_data()    
+#y0 = np.array([8.0,0.0,30.0])
+#tt = np.arange(SD.dt_integration,SD.nb_loop_test*SD.dt_integration+0.000001,SD.dt_integration)
+#S = solve_ivp(fun=lambda t,y: AnDA_Lorenz_63(y,t,SD.parameters.sigma,SD.parameters.rho,SD.parameters.beta),t_span=[0.,5+0.000001],y0=y0,first_step=SD.dt_integration,t_eval=np.arange(0,5+0.000001,SD.dt_integration),method='RK45')
 
-y0 = S.y[:,-1];
-S = solve_ivp(fun=lambda t,y: AnDA_Lorenz_63(y,t,SD.parameters.sigma,SD.parameters.rho,SD.parameters.beta),t_span=[SD.dt_integration,SD.nb_loop_test+0.000001],y0=y0,first_step=SD.dt_integration,t_eval=tt,method='RK45')
-S = S.y.transpose()
+#y0 = S.y[:,-1];
+#S = solve_ivp(fun=lambda t,y: AnDA_Lorenz_63(y,t,SD.parameters.sigma,SD.parameters.rho,SD.parameters.beta),t_span=[SD.dt_integration,SD.nb_loop_test+0.000001],y0=y0,first_step=SD.dt_integration,t_eval=tt,method='RK45')
+#S = S.y.transpose()
 
 
 class time_series:
@@ -81,47 +81,30 @@ def L63PatchDataExtraction(xt,RMD):
   dataTestNoNaN     = image.extract_patches_2d(image=xt.values[17500::time_step,:],patch_size=(dT,3),max_patches=NbTest)
 
 
-  flagTypeMissData = 1
-  if flagTypeMissData == 0:
-      indRand         = np.random.permutation(dataTrainingNoNaN.shape[0]*dataTrainingNoNaN.shape[1]*dataTrainingNoNaN.shape[2])
-      indRand         = indRand[0:int(rateMissingData*len(indRand))]
+  
 
-      dataTraining    = np.copy(dataTrainingNoNaN).reshape((dataTrainingNoNaN.shape[0]*dataTrainingNoNaN.shape[1]*dataTrainingNoNaN.shape[2],1))
-      dataTraining[indRand] = float('nan')
-      dataTraining    = np.reshape(dataTraining,(dataTrainingNoNaN.shape[0],dataTrainingNoNaN.shape[1],dataTrainingNoNaN.shape[2]))
-    
-
-      indRand         = np.random.permutation(dataTestNoNaN.shape[0]*dataTestNoNaN.shape[1]*dataTestNoNaN.shape[2])
-      indRand         = indRand[0:int(rateMissingData*len(indRand))]
-      dataTest        = np.copy(dataTestNoNaN).reshape((dataTestNoNaN.shape[0]*dataTestNoNaN.shape[1]*dataTestNoNaN.shape[2],1))
-      dataTest[indRand] = float('nan')
-      dataTest          = np.reshape(dataTest,(dataTestNoNaN.shape[0],dataTestNoNaN.shape[1],dataTestNoNaN.shape[2]))
-
-      indRand         = np.random.permutation(dataValNoNaN.shape[0]*dataValNoNaN.shape[1]*dataValNoNaN.shape[2])
-      indRand         = indRand[0:int(rateMissingData*len(indRand))]
-      dataVal         = np.copy(dataValNoNaN).reshape((dataValNoNaN.shape[0]*dataValNoNaN.shape[1]*dataValNoNaN.shape[2],1))
-      dataVal[indRand] = float('nan')
-      dataVal          = np.reshape(dataVal,(dataValNoNaN.shape[0],dataValNoNaN.shape[1],dataValNoNaN.shape[2]))
-
-
-      genSuffixObs    = '_ObsRnd_%02d_%02d'%(100*rateMissingData,10*sigNoise**2)
-
-  else:
-      time_step_obs   = int(1./(1.-rateMissingData))
-      dataTraining    = np.zeros((dataTrainingNoNaN.shape))
-      dataTraining[:] = float('nan')
-      dataTraining[:,::time_step_obs,:] = dataTrainingNoNaN[:,::time_step_obs,:]
-    
-      dataTest    = np.zeros((dataTestNoNaN.shape))
-      dataTest[:] = float('nan')
-      dataTest[:,::time_step_obs,:] = dataTestNoNaN[:,::time_step_obs,:]
-
-      dataVal    = np.zeros((dataValNoNaN.shape))
-      dataVal[:] = float('nan')
-      dataVal[:,::time_step_obs,:] = dataValNoNaN[:,::time_step_obs,:]
+  time_step_obs   = int(1./(1.-rateMissingData))
+  
+  indRand         = np.random.permutation(dataTrainingNoNaN.shape[0]*dataTrainingNoNaN.shape[1]*dataTrainingNoNaN.shape[2])
+  indRand         = indRand[0:int(rateMissingData*len(indRand))]
+  dataTraining    = np.copy(dataTrainingNoNaN).reshape((dataTrainingNoNaN.shape[0]*dataTrainingNoNaN.shape[1]*dataTrainingNoNaN.shape[2],1))
+  dataTraining[indRand] = float('nan')
+  dataTraining    = np.reshape(dataTraining,(dataTrainingNoNaN.shape[0],dataTrainingNoNaN.shape[1],dataTrainingNoNaN.shape[2]))
+  
+  indRand         = np.random.permutation(dataValNoNaN.shape[0]*dataValNoNaN.shape[1]*dataValNoNaN.shape[2])
+  indRand         = indRand[0:int(rateMissingData*len(indRand))]
+  dataVal   = np.copy(dataValNoNaN).reshape((dataValNoNaN.shape[0]*dataValNoNaN.shape[1]*dataValNoNaN.shape[2],1))
+  dataVal[indRand] = float('nan')
+  dataVal    = np.reshape(dataVal,(dataValNoNaN.shape[0],dataValNoNaN.shape[1],dataValNoNaN.shape[2]))
+  
+  indRand         = np.random.permutation(dataTestNoNaN.shape[0]*dataTestNoNaN.shape[1]*dataTestNoNaN.shape[2])
+  indRand         = indRand[0:int(rateMissingData*len(indRand))]
+  dataTest    = np.copy(dataTestNoNaN).reshape((dataTestNoNaN.shape[0]*dataTestNoNaN.shape[1]*dataTestNoNaN.shape[2],1))
+  dataTest[indRand] = float('nan')
+  dataTest    = np.reshape(dataTest,(dataTestNoNaN.shape[0],dataTestNoNaN.shape[1],dataTestNoNaN.shape[2]))
+  
 
 
-      genSuffixObs    = '_ObsSub_%02d_%02d'%(100*rateMissingData,10*sigNoise**2)
       
   # set to NaN patch boundaries
   dataTraining[:,0:10,:] =  float('nan')
@@ -137,9 +120,9 @@ def L63PatchDataExtraction(xt,RMD):
   maskVal     = ( dataVal    ==  dataVal   ).astype('float')
 
 
-  dataTraining = np.nan_to_num(dataTraining)
-  dataVal = np.nan_to_num(dataVal)
-  dataTest     = np.nan_to_num(dataTest)
+  dataTraining = np.nan_to_num(dataTraining,nan=0.0)
+  dataVal = np.nan_to_num(dataVal,nan=0.0)
+  dataTest     = np.nan_to_num(dataTest,nan=0.0)
 
   # Permutation to have channel as #1 component
   dataTraining      = np.moveaxis(dataTraining,-1,1)
@@ -196,88 +179,79 @@ def L63PatchDataExtraction(xt,RMD):
   x_test_obs  = (X_test_obs - meanTr) / stdTr
   x_val_obs  = (X_val_obs - meanTr) / stdTr
 
+  X_train_Init = np.zeros(X_train.shape)
+  for ii in range(0,X_train.shape[0]):
+    # Initial linear interpolation for each component
+    XInit = np.zeros((X_train.shape[1],X_train.shape[2]))
 
-  flagInit = 1
-  if flagInit == 0: 
-    X_train_Init = mask_train * X_train_obs + (1. - mask_train) * (np.zeros(X_train_missing.shape) + meanTr)
-    X_test_Init  = mask_test * X_test_obs + (1. - mask_test) * (np.zeros(X_test_missing.shape) + meanTr)
-  else:
-    X_train_Init = np.zeros(X_train.shape)
-    for ii in range(0,X_train.shape[0]):
-      # Initial linear interpolation for each component
-      XInit = np.zeros((X_train.shape[1],X_train.shape[2]))
+    for kk in range(0,3):
+      indt  = np.where( mask_train[ii,kk,:] == 1.0 )[0]
+      indt_ = np.where( mask_train[ii,kk,:] == 0.0 )[0]
 
-      for kk in range(0,3):
-        indt  = np.where( mask_train[ii,kk,:] == 1.0 )[0]
-        indt_ = np.where( mask_train[ii,kk,:] == 0.0 )[0]
+      if len(indt) > 1:
+        indt_[ np.where( indt_ < np.min(indt)) ] = np.min(indt)
+        indt_[ np.where( indt_ > np.max(indt)) ] = np.max(indt)
+        fkk = scipy.interpolate.interp1d(indt, X_train_obs[ii,kk,indt])
+        XInit[kk,indt]  = X_train_obs[ii,kk,indt]
+        XInit[kk,indt_] = fkk(indt_)
+      else:
+        XInit = XInit + meanTr
 
-        if len(indt) > 1:
-          indt_[ np.where( indt_ < np.min(indt)) ] = np.min(indt)
-          indt_[ np.where( indt_ > np.max(indt)) ] = np.max(indt)
-          fkk = scipy.interpolate.interp1d(indt, X_train_obs[ii,kk,indt])
-          XInit[kk,indt]  = X_train_obs[ii,kk,indt]
-          XInit[kk,indt_] = fkk(indt_)
-        else:
-          XInit = XInit + meanTr
+    X_train_Init[ii,:,:] = XInit
 
-      X_train_Init[ii,:,:] = XInit
+  X_test_Init = np.zeros(X_test.shape)
+  for ii in range(0,X_test.shape[0]):
+    # Initial linear interpolation for each component
+    XInit = np.zeros((X_test.shape[1],X_test.shape[2]))
 
-    X_test_Init = np.zeros(X_test.shape)
-    for ii in range(0,X_test.shape[0]):
-      # Initial linear interpolation for each component
-      XInit = np.zeros((X_test.shape[1],X_test.shape[2]))
+    for kk in range(0,3):
+      indt  = np.where( mask_test[ii,kk,:] == 1.0 )[0]
+      indt_ = np.where( mask_test[ii,kk,:] == 0.0 )[0]
 
-      for kk in range(0,3):
-        indt  = np.where( mask_test[ii,kk,:] == 1.0 )[0]
-        indt_ = np.where( mask_test[ii,kk,:] == 0.0 )[0]
+      if len(indt) > 1:
+        indt_[ np.where( indt_ < np.min(indt)) ] = np.min(indt)
+        indt_[ np.where( indt_ > np.max(indt)) ] = np.max(indt)
+        fkk = scipy.interpolate.interp1d(indt, X_test_obs[ii,kk,indt])
+        XInit[kk,indt]  = X_test_obs[ii,kk,indt]
+        XInit[kk,indt_] = fkk(indt_)
+      else:
+        XInit = XInit + meanTr
 
-        if len(indt) > 1:
-          indt_[ np.where( indt_ < np.min(indt)) ] = np.min(indt)
-          indt_[ np.where( indt_ > np.max(indt)) ] = np.max(indt)
-          fkk = scipy.interpolate.interp1d(indt, X_test_obs[ii,kk,indt])
-          XInit[kk,indt]  = X_test_obs[ii,kk,indt]
-          XInit[kk,indt_] = fkk(indt_)
-        else:
-          XInit = XInit + meanTr
+    X_test_Init[ii,:,:] = XInit
 
-      X_test_Init[ii,:,:] = XInit
+    X_val_Init = np.zeros(X_val.shape)
+  for ii in range(0,X_val.shape[0]):
+    # Initial linear interpolation for each component
+    XInit = np.zeros((X_val.shape[1],X_val.shape[2]))
 
-      X_val_Init = np.zeros(X_val.shape)
-    for ii in range(0,X_val.shape[0]):
-      # Initial linear interpolation for each component
-      XInit = np.zeros((X_val.shape[1],X_val.shape[2]))
+    for kk in range(0,3):
+      indt  = np.where( mask_val[ii,kk,:] == 1.0 )[0]
+      indt_ = np.where( mask_val[ii,kk,:] == 0.0 )[0]
 
-      for kk in range(0,3):
-        indt  = np.where( mask_val[ii,kk,:] == 1.0 )[0]
-        indt_ = np.where( mask_val[ii,kk,:] == 0.0 )[0]
+      if len(indt) > 1:
+        indt_[ np.where( indt_ < np.min(indt)) ] = np.min(indt)
+        indt_[ np.where( indt_ > np.max(indt)) ] = np.max(indt)
+        fkk = scipy.interpolate.interp1d(indt, X_val_obs[ii,kk,indt])
+        XInit[kk,indt]  = X_val_obs[ii,kk,indt]
+        XInit[kk,indt_] = fkk(indt_)
+      else:
+        XInit = XInit + meanTr
 
-        if len(indt) > 1:
-          indt_[ np.where( indt_ < np.min(indt)) ] = np.min(indt)
-          indt_[ np.where( indt_ > np.max(indt)) ] = np.max(indt)
-          fkk = scipy.interpolate.interp1d(indt, X_val_obs[ii,kk,indt])
-          XInit[kk,indt]  = X_val_obs[ii,kk,indt]
-          XInit[kk,indt_] = fkk(indt_)
-        else:
-          XInit = XInit + meanTr
+    X_val_Init[ii,:,:] = XInit
 
-      X_test_Init[ii,:,:] = XInit
-      
 
-    x_train_Init = ( X_train_Init - meanTr ) / stdTr
-    x_val_Init = ( X_val_Init - meanTr ) / stdTr
-    x_test_Init = ( X_test_Init - meanTr ) / stdTr
+  return X_train, X_val, X_test, X_train_obs, X_val_obs,X_test_obs, X_train_missing, X_val_missing,X_test_missing, mask_train,mask_val, mask_test, X_train_Init,X_val_Init ,X_test_Init,meanTr, stdTr
 
-  return x_train, x_val, x_test, x_train_obs, x_val_obs,x_test_obs, x_train_missing, x_val_missing,x_test_missing,mask_train,mask_val,mask_test,x_train_Init,x_val_Init, x_test_Init, meanTr, stdTr
+def visualisation_data(X_train,X_train_obs,X_train_Init,idx):
 
-def visualisation_data(x_train,x_train_obs,x_train_Init,idx):
-
-  plt.figure(figsize=(20,10))
+  plt.figure(figsize=(10,5))
   for jj in range(0,3):
     indjj = 131+jj
     plt.subplot(indjj)
-    plt.plot(x_train_obs[idx,jj,:],'k.',label='Observations')
-    plt.plot(x_train[idx,jj,:],'-',label='Simulated trajectory',alpha=0.5)
-    plt.plot(x_train_Init[idx,jj,:],'-',label='Interpolated trajectory',alpha=0.5)
+    plt.plot(X_train_obs[idx,jj,:],'k.',label='Observations')
+    plt.plot(X_train[idx,jj,:],'b-',label='Simulated trajectory')
+    plt.plot(X_train_Init[idx,jj,:],label='Interpolated trajectory')
+
     plt.legend()
     plt.xlabel('Timestep')
   plt.savefig('visualisation_dataL63_2D.pdf')
@@ -285,8 +259,8 @@ def visualisation_data(x_train,x_train_obs,x_train_Init,idx):
   plt.figure(figsize=(8,8))
   ax = plt.axes(projection='3d')
 
-  ax.plot3D(x_train_obs[idx,0,:],x_train_obs[idx,1,:],x_train_obs[idx,2,:],'k.',linewidth=0.7,alpha=0.8,label='Observations')
-  ax.plot3D(x_train[idx,0,:],x_train[idx,1,:],x_train[idx,2,:],'b-',linewidth=0.7,alpha=1,label='Simulated trajectory')
+  ax.plot3D(X_train_obs[idx,0,:],X_train_obs[idx,1,:],X_train_obs[idx,2,:],'k.',linewidth=0.7,alpha=0.8,label='Observations')
+  ax.plot3D(X_train[idx,0,:],X_train[idx,1,:],X_train[idx,2,:],'b-',linewidth=0.7,alpha=1,label='Simulated trajectory')
   ax.set_xlabel('x')
   ax.set_ylabel('y')
   ax.set_zlabel('z')
@@ -294,8 +268,8 @@ def visualisation_data(x_train,x_train_obs,x_train_Init,idx):
   plt.savefig('visualisation_dataL63_3D.pdf')
 
 def plot_loss(model,max_epoch):
-    tot_loss=torch.FloatTensor(model_CNN.tot_loss)
-    tot_val_loss=torch.FloatTensor(model_CNN.tot_val_loss)
+    tot_loss=torch.FloatTensor(model.tot_loss)
+    tot_val_loss=torch.FloatTensor(model.tot_val_loss)
     n=np.shape(tot_loss)[0]//max_epoch
     m=np.shape(tot_val_loss)[0]//max_epoch
     j,k=0,0
@@ -315,10 +289,10 @@ def plot_loss(model,max_epoch):
     plt.legend()
     plt.show()
 
-def plot_prediction(model,idx,dataset):
+def plot_prediction(model,idx,dataset,name='prediction'):
   test= next(iter(dataset))
 
-  x_pred=model(test[1])
+  x_pred=model(test[0])
 
   
   x_obs=test[1][idx].detach().numpy()
@@ -338,7 +312,18 @@ def plot_prediction(model,idx,dataset):
     plt.ylabel('Position')
     plt.title('Variable {}'.format(j))
     plt.legend()
-  plt.savefig('Prediction.pdf')
+  plt.savefig(name+'.pdf')
+
+
+def R_score(model,idx,dataset): 
+    R_score = 0
+    test= next(iter(dataset))
+    x_truth=test[3][idx].detach().numpy()
+    x_pred=model(test[0])
+    x_pred=x_pred[idx].detach().numpy()
+    R_score = np.sqrt(((x_pred-x_truth)**2).mean(axis=1)).mean()    
+    return R_score
+
 
 
 
