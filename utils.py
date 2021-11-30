@@ -55,8 +55,8 @@ def L63_sparse_noisy_data(
     sigma_noise :    float, standard deviation of observation noise
     var_mask :       array of shape (3,), tag for observed variables
     seed_sparsity :  int, random seed for data sparsity
-    sparsity :       float in [0, 1], percentage of missing observationnal data
-                     for each observed variable
+    sparsity :       float in [0, 1], percentage of observationnal data for
+                     each observed variable
     masked_value :   value retained for masked data
     """
 
