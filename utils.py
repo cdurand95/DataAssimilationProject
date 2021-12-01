@@ -33,13 +33,14 @@ def L63_sparse_noisy_data(
     beta = 8./3.,
     dt_integration = 0.01,
     final_time = 5.,
-    freq_obs = 8,
+    freq_obs = 2,
     seed_noise = 1234,
     sigma_noise = np.sqrt(2.),
     var_mask = np.array([1,1,1]),
     seed_sparsity = 4321,
-    sparsity = 0.5,
-    masked_value=np.NaN):
+    sparsity = 1,
+    masked_value=0.,
+    num_variables=3):
 
     """
     Returns data mask, noisy and sparse observation data, noisy data and true
@@ -62,7 +63,7 @@ def L63_sparse_noisy_data(
     masked_value :   value retained for masked data
     """
 
-    t_eval = np.arange(0, final_time, dt_integration)
+    t_eval = np.linspace(0, final_time, num=int(final_time/dt_integration))
     t_obs = t_eval[::freq_obs]
 
     y_true = solve_ivp(
@@ -84,41 +85,24 @@ def L63_sparse_noisy_data(
         mask_obs[np.random.choice(mask_obs.shape[0], size=s, replace=False), i] = np.ones(s)
 
     mask[::freq_obs] = mask_obs
-
+    if num_variables==3 :
+        var_mask = np.array([1,1,1])
+    elif num_variables==2:
+        var_mask = np.array([1,1,0])
+    elif num_variables==1:
+        var_mask = np.array([1,0,0])
+    else : 
+        return RaiseError
     mask = mask*var_mask
 
     y_obs = np.copy(y_noise)
     np.putmask(y_obs, mask==0, masked_value)
+    
+    y_missing = np.copy(y_true)
+    np.putmask(y_missing, mask==0, masked_value)
 
-    return mask, y_obs, y_true
+    return mask, y_obs, y_true, y_missing
 
-
-def L63PatchDataExtraction(sparsity,sigma_noise):
-    NbTraining = 10000
-    NbVal      = 2000
-    NbTest     = 2000
-    begin_time = 10
-    final_time = int(2*(NbTraining + NbVal + NbTest)//0.01) + begin_time
-    
-    mask, y_obs, y_noise, y_true = L63_sparse_noisy_data(sparsity = sparsity, sigma_noise = sigma_noise)
-    
-    X_train          = y_true[debut_time+2*NbTraining:debut_time+2*NbTraining]
-    X_train_noise    = y_noise[debut_time:debut_time+2*NbTraining]
-    X_train_obs      = y_obs[debut_time:debut_time+2*NbTraining]
-    mask_train       = mask[debut_time:debut_time+2*NbTraining]
-    
-    X_val          = y_true[debut_time+2*NbTraining:debut_time+2*NbTraining+2*NbVal]
-    X_val_noise    = y_noise[debut_time+2*NbTraining:debut_time+2*NbTraining+2*NbVal]
-    X_val_obs      = y_obs[debut_time+2*NbTraining:debut_time+2*NbTraining+2*NbVal]
-    mask_val       = mask[debut_time+2*NbTraining:debut_time+2*NbTraining+2*NbVal]
-    
-    X_test          = y_true[debut_time+2*NbTraining+2*NbVal:]
-    X_test_noise    = y_noise[debut_time+2*NbTraining+2*NbVal:]
-    X_test_obs      = y_obs[debut_time+2*NbTraining+2*NbVal:]
-    mask_test       = mask[debut_time+2*NbTraining+2*NbVal:]
-    
-    return X_test
- 
 
 def visualisation_data(X_train,X_train_obs,X_train_Init,idx):
 
@@ -199,135 +183,34 @@ def AnDA_Lorenz_63(S,t,sigma,rho,beta):
     dS  = np.array([x_1,x_2,x_3]);
     return dS
 
-class Simulation_data:
-    model = 'Lorenz_63'
-    class parameters:
-        sigma = 10.0
-        rho = 28.0
-        beta = 8.0/3
-    dt_integration = 0.01 # integration time
-    dt_states = 1 # number of integeration times between consecutive states (for xt and catalog)
-    dt_obs = 8 # number of integration times between consecutive observations (for yo)
-    var_obs = np.array([0,1,2]) # indices of the observed variables
-    nb_loop_train = 10**2 # size of the catalog
-    nb_loop_test = 20000 # size of the true state and noisy observations
-    sigma2_catalog = 0.0 # variance of the model error to generate the catalog
-    sigma2_obs = 2.0 # variance of the observation error to generate observation
 
-def L63PatchDataExtraction_test(sparsity,sigma_noise):
-    NbTraining = 1000
-    NbVal      = 200
-    NbTest     = 200
-    begin_time = 10
-    final_time = (NbTraining+NbVal+NbTest)*200 + begin_time
-    
-    mask, y_obs, y_noise, y_true = L63_sparse_noisy_data(sparsity = sparsity, sigma_noise = sigma_noise,final_time =final_time )
-    
-    X_train          = y_true[begin_time:begin_time+2*NbTraining*200]
-    X_train_noise    = y_noise[begin_time:begin_time+2*NbTraining*200]
-    X_train_obs      = y_obs[begin_time:begin_time+2*NbTraining*200]
-    mask_train       = mask[begin_time:begin_time+2*NbTraining*200]
-    
-    X_val          = y_true[begin_time+2*NbTraining*200:begin_time+2*NbTraining*200+2*NbVal*200]
-    X_val_noise    = y_noise[begin_time+2*NbTraining*200:begin_time+2*NbTraining*200+2*NbVal*200]
-    X_val_obs      = y_obs[begin_time+2*NbTraining*200:begin_time+2*NbTraining*200+2*NbVal*200]
-    mask_val       = mask[begin_time+2*NbTraining*200:begin_time+2*NbTraining*200+2*NbVal*200]
-    
-    X_test          = y_true[begin_time+2*NbTraining*200+2*NbVal*200:]
-    X_test_noise    = y_noise[begin_time+2*NbTraining*200+2*NbVal*200:]
-    X_test_obs      = y_obs[begin_time+2*NbTraining*200+2*NbVal*200:]
-    mask_test       = mask[begin_time+2*NbTraining*200+2*NbVal*200:]
-    
-    return X_train, X_val, X_test
-
-def L63PatchDataExtraction(xt,RMD,sigNoise):
-
+def L63PatchDataExtraction_test(sparsity,sigma_noise,num_variables):
     NbTraining = 10000
     NbVal      = 2000
     NbTest     = 2000
-    time_step = 1
-    dT        = 200
-    sigNoise  = np.sqrt(2.0)
-    rateMissingData = RMD#0.75#0.95
-
-  # extract subsequences
-    dataTrainingNoNaN = image.extract_patches_2d(image=xt.values[0:12000:time_step,:],patch_size=(dT,3),max_patches=NbTraining)
-    dataValNoNaN     = image.extract_patches_2d(image=xt.values[15000::time_step,:],patch_size=(dT,3),max_patches=NbVal)
-    dataTestNoNaN     = image.extract_patches_2d(image=xt.values[17500::time_step,:],patch_size=(dT,3),max_patches=NbTest)
-
-    time_step_obs   = int(1./(1.-rateMissingData))
-    indRand         = np.random.permutation(dataTrainingNoNaN.shape[0]*dataTrainingNoNaN.shape[1]*dataTrainingNoNaN.shape[2])
-    indRand         = indRand[0:int(rateMissingData*len(indRand))]
-    dataTraining    = np.copy(dataTrainingNoNaN).reshape((dataTrainingNoNaN.shape[0]*dataTrainingNoNaN.shape[1]*dataTrainingNoNaN.shape[2],1))
-    dataTraining[indRand] = float('nan')
-    dataTraining    = np.reshape(dataTraining,(dataTrainingNoNaN.shape[0],dataTrainingNoNaN.shape[1],dataTrainingNoNaN.shape[2]))
+    begin_time = 10
+    final_time = 14100*2
     
-    indRand         = np.random.permutation(dataValNoNaN.shape[0]*dataValNoNaN.shape[1]*dataValNoNaN.shape[2])
-    indRand         = indRand[0:int(rateMissingData*len(indRand))]
-    dataVal   = np.copy(dataValNoNaN).reshape((dataValNoNaN.shape[0]*dataValNoNaN.shape[1]*dataValNoNaN.shape[2],1))
-    dataVal[indRand] = float('nan')
-    dataVal    = np.reshape(dataVal,(dataValNoNaN.shape[0],dataValNoNaN.shape[1],dataValNoNaN.shape[2]))
+    mask, y_obs, y_true, y_missing = L63_sparse_noisy_data(sparsity = sparsity, sigma_noise = sigma_noise,final_time =final_time,num_variables=num_variables)
     
-    indRand         = np.random.permutation(dataTestNoNaN.shape[0]*dataTestNoNaN.shape[1]*dataTestNoNaN.shape[2])
-    indRand         = indRand[0:int(rateMissingData*len(indRand))]
-    dataTest    = np.copy(dataTestNoNaN).reshape((dataTestNoNaN.shape[0]*dataTestNoNaN.shape[1]*dataTestNoNaN.shape[2],1))
-    dataTest[indRand] = float('nan')
-    dataTest    = np.reshape(dataTest,(dataTestNoNaN.shape[0],dataTestNoNaN.shape[1],dataTestNoNaN.shape[2]))
-  # set to NaN patch boundaries
-    dataTraining[:,0:10,:] =  float('nan')
-    dataVal[:,0:10,:] =  float('nan')
-    dataTest[:,0:10,:]     =  float('nan')
-    dataTraining[:,dT-10:dT,:] =  float('nan')
-    dataTest[:,dT-10:dT,:]     =  float('nan')
-    dataVal[:,dT-10:dT,:]     =  float('nan')
-
-  # mask for NaN
-    maskTraining = (dataTraining == dataTraining).astype('float')
-    maskTest     = ( dataTest    ==  dataTest   ).astype('float')
-    maskVal     = ( dataVal    ==  dataVal   ).astype('float')
-
-
-    dataTraining = np.nan_to_num(dataTraining,nan=0.0)
-    dataVal = np.nan_to_num(dataVal,nan=0.0)
-    dataTest     = np.nan_to_num(dataTest,nan=0.0)
-
-  # Permutation to have channel as #1 component
-    dataTraining      = np.moveaxis(dataTraining,-1,1)
-    maskTraining      = np.moveaxis(maskTraining,-1,1)
-    dataTrainingNoNaN = np.moveaxis(dataTrainingNoNaN,-1,1)
-
-    dataTest      = np.moveaxis(dataTest,-1,1)
-    maskTest      = np.moveaxis(maskTest,-1,1)
-    dataTestNoNaN = np.moveaxis(dataTestNoNaN,-1,1)
-
-    dataVal     = np.moveaxis(dataVal,-1,1)
-    maskVal     = np.moveaxis(maskVal,-1,1)
-    dataValNoNaN = np.moveaxis(dataValNoNaN,-1,1)
-
-
-  ## raw data
-    X_train         = dataTrainingNoNaN
-    X_train_missing = dataTraining
-    mask_train      = maskTraining
-
-    X_test         = dataTestNoNaN
-    X_test_missing = dataTest
-    mask_test      = maskTest
-
-    X_val        = dataValNoNaN
-    X_val_missing = dataVal
-    mask_val      = maskVal
-
-
-  ## normalized data
+    X_train          = y_true[begin_time*100:begin_time*100+NbTraining*200].reshape((NbTraining,200,3))
+    X_train_missing  = y_missing[begin_time*100:begin_time*100+NbTraining*200].reshape((NbTraining,200,3))
+    X_train_obs      = y_obs[begin_time*100:begin_time*100+NbTraining*200].reshape((NbTraining,200,3))
+    mask_train       = mask[begin_time*100:begin_time*100+NbTraining*200].reshape((NbTraining,200,3))
+    
+    X_val          = y_true[begin_time*100+NbTraining*200:begin_time*100+NbTraining*200+NbVal*200].reshape((NbVal,200,3))
+    X_val_missing  = y_missing[begin_time*100+NbTraining*200:begin_time*100+NbTraining*200+NbVal*200].reshape((NbVal,200,3))
+    X_val_obs      = y_obs[begin_time*100+NbTraining*200:begin_time*100+NbTraining*200+NbVal*200].reshape((NbVal,200,3))
+    mask_val       = mask[begin_time*100+NbTraining*200:begin_time*100+NbTraining*200+NbVal*200].reshape((NbVal,200,3))
+    
+    X_test          = y_true[begin_time*100+NbTraining*200+NbVal*200:begin_time*100+NbTraining*200+NbVal*200+NbTest*200].reshape((NbTest,200,3))
+    X_test_missing  = y_missing[begin_time*100+NbTraining*200+NbVal*200:begin_time*100+NbTraining*200+NbVal*200+NbTest*200].reshape((NbTest,200,3))
+    X_test_obs      = y_obs[begin_time*100+NbTraining*200+NbVal*200:begin_time*100+NbTraining*200+NbVal*200+NbTest*200].reshape((NbTest,200,3))
+    mask_test       = mask[begin_time*100+NbTraining*200+NbVal*200:begin_time*100+NbTraining*200+NbVal*200+NbTest*200].reshape((NbTest,200,3))
+    
     meanTr          = np.mean(X_train_missing[:]) / np.mean(mask_train) 
-
-
-
-  # Generate noisy observsation
-    X_train_obs = X_train_missing + sigNoise * maskTraining * np.random.randn(X_train_missing.shape[0],X_train_missing.shape[1],X_train_missing.shape[2])
-    X_test_obs  = X_test_missing  + sigNoise * maskTest * np.random.randn(X_test_missing.shape[0],X_test_missing.shape[1],X_test_missing.shape[2])
-    X_val_obs  = X_val_missing  + sigNoise * maskVal * np.random.randn(X_val_missing.shape[0],X_val_missing.shape[1],X_val_missing.shape[2])
+    meanTe          = np.mean(X_test_missing[:]) / np.mean(mask_test) 
+    meanV           = np.mean(X_val_missing[:]) / np.mean(mask_val) 
     
     X_train_Init = np.zeros(X_train.shape)
     for ii in range(0,X_train.shape[0]):
@@ -335,15 +218,16 @@ def L63PatchDataExtraction(xt,RMD,sigNoise):
         XInit = np.zeros((X_train.shape[1],X_train.shape[2]))
 
         for kk in range(0,3):
-            indt  = np.where( mask_train[ii,kk,:] == 1.0 )[0]
-            indt_ = np.where( mask_train[ii,kk,:] == 0.0 )[0]
-
+            indt  = np.where( mask_train[ii,:,kk] == 1.0 )[0]
+            
+            indt_ = np.where( mask_train[ii,:,kk] == 0.0 )[0]
             if len(indt) > 1:
                 indt_[ np.where( indt_ < np.min(indt)) ] = np.min(indt)
                 indt_[ np.where( indt_ > np.max(indt)) ] = np.max(indt)
-                fkk = scipy.interpolate.interp1d(indt, X_train_obs[ii,kk,indt])
-                XInit[kk,indt]  = X_train_obs[ii,kk,indt]
-                XInit[kk,indt_] = fkk(indt_)
+                fkk = scipy.interpolate.interp1d(indt, X_train_obs[ii,indt,kk],axis=-1)
+                XInit[indt,kk]  = X_train_obs[ii,indt,kk]
+                XInit[indt_,kk] = fkk(indt_)
+                
             else:
                 XInit = XInit + meanTr
 
@@ -353,43 +237,65 @@ def L63PatchDataExtraction(xt,RMD,sigNoise):
     for ii in range(0,X_test.shape[0]):
     # Initial linear interpolation for each component
         XInit = np.zeros((X_test.shape[1],X_test.shape[2]))
-
         for kk in range(0,3):
-            indt  = np.where( mask_test[ii,kk,:] == 1.0 )[0]
-            indt_ = np.where( mask_test[ii,kk,:] == 0.0 )[0]
+            indt  = np.where( mask_test[ii,:,kk] == 1.0 )[0]
+           
+            indt_ = np.where( mask_test[ii,:,kk] == 0.0 )[0]
 
             if len(indt) > 1:
+                
                 indt_[ np.where( indt_ < np.min(indt)) ] = np.min(indt)
                 indt_[ np.where( indt_ > np.max(indt)) ] = np.max(indt)
-                fkk = scipy.interpolate.interp1d(indt, X_test_obs[ii,kk,indt])
-                XInit[kk,indt]  = X_test_obs[ii,kk,indt]
-                XInit[kk,indt_] = fkk(indt_)
+                
+                fkk = scipy.interpolate.interp1d(indt, X_test_obs[ii,indt,kk],axis=-1)
+                XInit[indt,kk]  = X_test_obs[ii,indt,kk]
+                XInit[indt_,kk] = fkk(indt_)
+                
             else:
-                XInit = XInit + meanTr
+                XInit = XInit + meanTe
 
         X_test_Init[ii,:,:] = XInit
-
+    
     X_val_Init = np.zeros(X_val.shape)
     for ii in range(0,X_val.shape[0]):
     # Initial linear interpolation for each component
         XInit = np.zeros((X_val.shape[1],X_val.shape[2]))
 
         for kk in range(0,3):
-            indt  = np.where( mask_val[ii,kk,:] == 1.0 )[0]
-            indt_ = np.where( mask_val[ii,kk,:] == 0.0 )[0]
+            indt  = np.where( mask_val[ii,:,kk] == 1.0 )[0]
+            indt_ = np.where( mask_val[ii,:,kk] == 0.0 )[0]
 
             if len(indt) > 1:
                 indt_[ np.where( indt_ < np.min(indt)) ] = np.min(indt)
                 indt_[ np.where( indt_ > np.max(indt)) ] = np.max(indt)
-                fkk = scipy.interpolate.interp1d(indt, X_val_obs[ii,kk,indt])
-                XInit[kk,indt]  = X_val_obs[ii,kk,indt]
-                XInit[kk,indt_] = fkk(indt_)
+                fkk = scipy.interpolate.interp1d(indt, X_val_obs[ii,indt,kk],axis=-1)
+                XInit[indt,kk]  = X_val_obs[ii,indt,kk]
+                XInit[indt_,kk] = fkk(indt_)
             else:
-                XInit = XInit + meanTr
+                XInit = XInit + meanV
 
         X_val_Init[ii,:,:] = XInit
 
-    return X_train, X_val, X_test, X_train_obs, X_val_obs,X_test_obs, X_train_missing, X_val_missing,X_test_missing, mask_train,mask_val, mask_test, X_train_Init,X_val_Init ,X_test_Init
+    Training_dataset = {}
+    Training_dataset['Truth']=X_train
+    Training_dataset['Obs']=X_train_obs
+    Training_dataset['Missing']=X_train_missing
+    Training_dataset['Init']=X_train_Init
+        
+    Val_dataset = {}
+    Val_dataset['Truth']=X_val
+    Val_dataset['Obs']=X_val_obs
+    Val_dataset['Missing']=X_val_missing
+    Val_dataset['Init']=X_val_Init
+        
+    Test_dataset = {}
+    Test_dataset['Truth']=X_test
+    Test_dataset['Obs']=X_test_obs
+    Test_dataset['Missing']=X_test_missing
+    Test_dataset['Init']=X_test_Init
+
+    return Training_dataset,Val_dataset,Test_dataset
+
 
 def visualisation_data(X_train,X_train_obs,X_train_Init,idx):
 
@@ -397,9 +303,9 @@ def visualisation_data(X_train,X_train_obs,X_train_Init,idx):
     for jj in range(0,3):
         indjj = 131+jj
         plt.subplot(indjj)
-        plt.plot(X_train_obs[idx,jj,:],'k.',label='Observations')
-        plt.plot(X_train[idx,jj,:],'b-',label='Simulated trajectory')
-        plt.plot(X_train_Init[idx,jj,:],label='Interpolated trajectory')
+        plt.plot(X_train_obs[idx,:,jj],'k.',label='Observations')
+        plt.plot(X_train[idx,:,jj],'b-',label='Simulated trajectory')
+        plt.plot(X_train_Init[idx,:,jj],label='Interpolated trajectory')
 
         plt.legend()
         plt.xlabel('Timestep')
@@ -474,9 +380,9 @@ def visualisation4DVar(idx,x_obs,x_GT,xhat):
     plt.figure(figsize = (10,5))
     for kk in range(0,3):
         plt.subplot(1,3,kk+1)
-        plt.plot(x_obs[idx,kk,:].detach().numpy(),'.',ms=3,alpha=0.3,label='Observations')
-        plt.plot(x_GT[idx,kk,:].detach().numpy(),label='Simulated trajectory',alpha=0.8)
-        plt.plot(xhat[idx,kk,:].detach().numpy(),label='4DVar Prediction',alpha=0.7)
+        plt.plot(x_obs[idx,:,kk].detach().numpy(),'.',ms=3,alpha=0.3,label='Observations')
+        plt.plot(x_GT[idx,:,kk].detach().numpy(),label='Simulated trajectory',alpha=0.8)
+        plt.plot(xhat[idx,:,kk].detach().numpy(),label='4DVar Prediction',alpha=0.7)
 
         
         plt.legend()
