@@ -184,7 +184,7 @@ def AnDA_Lorenz_63(S,t,sigma,rho,beta):
     return dS
 
 
-def L63PatchDataExtraction_test(sparsity,sigma_noise,num_variables):
+def L63PatchDataExtraction(sparsity,sigma_noise,num_variables):
     NbTraining = 10000
     NbVal      = 2000
     NbTest     = 2000
@@ -281,18 +281,21 @@ def L63PatchDataExtraction_test(sparsity,sigma_noise,num_variables):
     Training_dataset['Obs']=X_train_obs
     Training_dataset['Missing']=X_train_missing
     Training_dataset['Init']=X_train_Init
+    Training_dataset['Mask']=mask_train
         
     Val_dataset = {}
     Val_dataset['Truth']=X_val
     Val_dataset['Obs']=X_val_obs
     Val_dataset['Missing']=X_val_missing
     Val_dataset['Init']=X_val_Init
+    Val_dataset['Mask']=mask_val
         
     Test_dataset = {}
     Test_dataset['Truth']=X_test
     Test_dataset['Obs']=X_test_obs
     Test_dataset['Missing']=X_test_missing
     Test_dataset['Init']=X_test_Init
+    Test_dataset['Mask']=mask_test
 
     return Training_dataset,Val_dataset,Test_dataset
 
