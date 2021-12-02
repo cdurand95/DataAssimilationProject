@@ -1,10 +1,10 @@
 import os
 import time
 import copy
-
+import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
-
+import numpy as np
 from sklearn import decomposition
 from sklearn.feature_extraction import image
 
@@ -620,9 +620,9 @@ def visualisation_data(X_train, X_train_obs, X_train_Init, idx):
     for jj in range(0,3):
         indjj = 131+jj
         plt.subplot(indjj)
-        plt.plot(X_train_obs[idx,jj,:],'k.',label='Observations')
-        plt.plot(X_train[idx,jj,:],'b-',label='Simulated trajectory')
-        plt.plot(X_train_Init[idx,jj,:],label='Interpolated trajectory')
+        plt.plot(X_train_obs[idx,:,jj],'k.',label='Observations')
+        plt.plot(X_train[idx,:,jj],'b-',label='Simulated trajectory')
+        plt.plot(X_train_Init[idx,:,jj],label='Interpolated trajectory')
 
         plt.legend()
         plt.xlabel('Timestep')
@@ -650,50 +650,6 @@ def visualisation_data96(X_train, X_train_obs, X_train_Init, idx):
 
     plt.savefig('Figures/visualisation_dataL96_2D.pdf')
 
-def plot_loss(model, max_epoch):
-
-    tot_loss=torch.FloatTensor(model.tot_loss)
-    tot_val_loss=torch.FloatTensor(model.tot_val_loss)
-    n=np.shape(tot_loss)[0]//max_epoch
-    m=np.shape(tot_val_loss)[0]//max_epoch
-    j,k=0,0
-    mean_loss=[]
-    mean_val_loss=[]
-    for i in range(max_epoch):
-        mean_loss.append(torch.mean(tot_loss[j:j+n]))
-        mean_val_loss.append(torch.mean(tot_val_loss[k:k+m]))
-        k+=m
-        j+=n
-
-    plt.semilogy(np.arange(1,max_epoch+1,1),mean_loss ,'-',label='Train')
-    plt.semilogy(np.arange(1,max_epoch+1,1),mean_val_loss ,'-',label='Validation')
-    plt.xlabel('steps')
-    plt.ylabel('MSE')
-    plt.legend()
-    plt.show()
-
-def plot_prediction(model, idx, dataset, name='prediction'):
-    test = next(iter(dataset))
-
-    x_pred=model(test[0])
-
-    x_obs=test[1][idx].detach().numpy()
-    x_pred=x_pred[idx].detach().numpy()
-    x_truth=test[3][idx].detach().numpy()
-
-    time_=np.arange(0,2,0.01)
-
-    plt.figure(figsize=(15,6))
-    for j in range(3):
-        plt.subplot(1,3,j+1)
-        plt.plot(time_,x_obs[j],'b.',alpha=0.2,label='obs')
-        plt.plot(time_,x_pred[j],alpha=1,label='Prediction')
-        plt.plot(time_,x_truth[j],alpha=0.7,label='Truth')
-        plt.xlabel('Time')
-        plt.ylabel('Position')
-        plt.title('Variable {}'.format(j))
-        plt.legend()
-    plt.savefig('Figures/'+name+'.pdf')
 
 def plot_loss(model, max_epoch):
     tot_loss=torch.FloatTensor(model.tot_loss)
@@ -752,3 +708,71 @@ def visualisation4DVar(idx, x_obs, x_GT, xhat):
         plt.legend()
     plt.suptitle('4DVar Reconstruction')
     plt.savefig('4DVar.pdf')
+    
+def visualisation4DVar96(idx,x_obs,x_GT,xhat):
+    plt.figure(figsize = (10,5))
+    for kk in range(0,3):
+        plt.subplot(1,3,kk+1)
+        plt.plot(x_obs[idx,:,kk].detach().numpy(),'.',ms=3,alpha=0.3,label='Observations')
+        plt.plot(x_GT[idx,:,kk].detach().numpy(),label='Simulated trajectory',alpha=0.8)
+        plt.plot(xhat[idx,:,kk].detach().numpy(),label='4DVar Prediction',alpha=0.7)
+
+        
+        plt.legend()
+    plt.suptitle('4DVar Reconstruction')
+    plt.savefig('Figures/4DVar96.pdf')
+    
+    plt.figure(figsize = (10,10))
+    plt.subplot(3,1,1)
+    plt.imshow(x_GT[idx,:,:].detach().numpy().transpose())
+    plt.colorbar()
+    plt.title('Ground truth')
+    
+    plt.subplot(3,1,2)
+    plt.imshow(xhat[idx,:,:].detach().numpy().transpose())
+    plt.colorbar()
+    plt.title('4D Var Reconstruction')
+    
+    plt.subplot(3,1,3)
+    plt.imshow(x_GT[idx,:,:].detach().numpy().transpose()-xhat[idx,:,:].detach().numpy().transpose())
+    plt.colorbar()
+    plt.title('Difference')
+    
+    plt.savefig('Figures/4DVar96_2.pdf')
+    
+def reconstruction_error_4DVar96(GT,pred):
+    R_score = 0
+    x_truth=GT.detach().numpy()
+    x_pred=pred.detach().numpy()
+    R_score = np.sqrt(((x_pred-x_truth)**2).mean(axis=2)).mean()
+    return R_score 
+
+def plot_prediction96(model,idx,dataset,name='prediction'):
+    test= next(iter(dataset))
+
+    x_pred=model(test[0])
+
+    x_obs=test[1][idx].detach().numpy()
+    x_pred=x_pred[idx].detach().numpy()
+    x_truth=test[3][idx].detach().numpy()
+
+
+    time_=np.arange(0,2,0.01)
+
+    plt.figure(figsize = (10,10))
+    plt.subplot(3,1,1)
+    plt.imshow(x_truth.transpose())
+    plt.colorbar()
+    plt.title('Ground truth')
+    
+    plt.subplot(3,1,2)
+    plt.imshow(x_pred.transpose())
+    plt.colorbar()
+    plt.title('Prediction')
+    
+    plt.subplot(3,1,3)
+    plt.imshow(x_truth.transpose()-x_pred.transpose())
+    plt.colorbar()
+    plt.title('Difference')
+    
+    plt.savefig('Figures/'+name+'.pdf')
