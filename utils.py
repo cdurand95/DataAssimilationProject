@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 
 import torch
 import torch.nn.functional as F
+import pytorch_lightning as pl
 
 from sklearn import decomposition
 from sklearn.feature_extraction import image
