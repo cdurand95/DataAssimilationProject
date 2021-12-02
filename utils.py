@@ -227,6 +227,7 @@ def L63PatchDataExtraction(sparsity,sigma_noise,num_variables):
     meanTr          = np.mean(X_train_missing[:]) / np.mean(mask_train) 
     meanTe          = np.mean(X_test_missing[:]) / np.mean(mask_test) 
     meanV           = np.mean(X_val_missing[:]) / np.mean(mask_val) 
+    print(meanTr)
     
     X_train_Init = np.zeros(X_train.shape)
     for ii in range(0,X_train.shape[0]):
@@ -356,17 +357,21 @@ def plot_prediction(model,idx,dataset,name='prediction'):
     test= next(iter(dataset))
 
     x_pred=model(test[0])
+    
     x_obs=test[1][idx].detach().numpy()
+    
     x_pred=x_pred[idx].detach().numpy()
+    
     x_truth=test[3][idx].detach().numpy()
+    
     time_=np.arange(0,2,0.01)
 
     plt.figure(figsize=(15,6))
     for j in range(3):
         plt.subplot(1,3,j+1)
-        plt.plot(time_,x_obs[j],'b.',alpha=0.2,label='obs')
-        plt.plot(time_,x_pred[j],alpha=1,label='Prediction')
-        plt.plot(time_,x_truth[j],alpha=0.7,label='Truth')
+        plt.plot(time_,x_obs[:,j],'b.',alpha=0.2,label='obs')
+        plt.plot(time_,x_pred[:,j],alpha=1,label='Prediction')
+        plt.plot(time_,x_truth[:,j],alpha=0.7,label='Truth')
         plt.xlabel('Time')
         plt.ylabel('Position')
         plt.title('Variable {}'.format(j))
