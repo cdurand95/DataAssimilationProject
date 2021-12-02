@@ -185,6 +185,22 @@ def AnDA_Lorenz_63(S,t,sigma,rho,beta):
 
 
 def L63PatchDataExtraction(sparsity,sigma_noise,num_variables):
+    """
+    Returns Training, Validation and Testing Dataset using L63_sparse_noisy_data function for L63 Model
+    Inputs : 
+    sparsity :       float in [0, 1], percentage of observationnal data for
+                     each observed variable
+    sigma_noise :    float, standard deviation of observation noise
+    num_variables :  int in [1, 2, 3], choice of the number of variables observed
+    
+    Outputs : 3 dictionnaries : Training_dataset, Val_dataset and Test_dataset with the array 'Truth', 'Missing', 'Obs', 'Init', and 'Mask'
+    'Truth' : ground-truth trajectory simulated
+    'Missing' : ground-truth trajectory on observed data
+    'Obs' : Observed data : masks and noise applied
+    'Mask' : Mask array : value 1 in the point is observed, 0 otherwise
+    'Init' : Interpolated trajectory between the observed data points.
+    
+    """
     NbTraining = 10000
     NbVal      = 2000
     NbTest     = 2000
