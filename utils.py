@@ -58,10 +58,12 @@ class CNN(pl.LightningModule):
 
     def forward(self, xinp):
 
+        xinp = xinp.view(-1, self.data_shape[1], self.data_shape[0])
+
         x = self.layers_list[0](xinp)
         for layer in self.layers_list[1:]:
             x = layer(F.relu(x))
-        x = x.view(-1, self.data_shape[1], self.data_shape[0])
+        x = x.view(-1, self.data_shape[0], self.data_shape[1])
 
         return x
 
@@ -137,7 +139,7 @@ class CNN(pl.LightningModule):
 
         if epoch_val_loss < self.best_loss:
             self.best_loss = epoch_val_loss
-            self.best_model_wts = copy.deepcopy(model_CNN.state_dict())
+            self.best_model_wts = copy.deepcopy(self.state_dict())
 
         return loss
 
