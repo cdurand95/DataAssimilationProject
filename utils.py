@@ -2,23 +2,13 @@ import os
 import time
 import copy
 
-import pytorch_lightning as pl
-import torch
-import torch.nn.functional as F
-import numpy as np
-
 import numpy as np
 import matplotlib.pyplot as plt
 
 import torch
+import torch.optim as optim
 import torch.nn.functional as F
 import pytorch_lightning as pl
-
-from sklearn import decomposition
-from sklearn.feature_extraction import image
-
-import scipy
-from scipy.integrate import solve_ivp
 
 ##### CNN model
 
