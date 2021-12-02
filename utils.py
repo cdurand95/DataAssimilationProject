@@ -18,7 +18,7 @@ from scipy.integrate import solve_ivp
 
 class CNN(pl.LightningModule):
 
-    def __init__(self, data_shape, n_layers=4, dW=1, dimCNN=10, batch_size=128):
+    def __init__(self, data_shape, n_layers=4, dW=1, dimCNN=10, batch_size=128, lr=5e-3):
         super(CNN, self).__init__()
 
         self.data_shape = data_shape
@@ -26,6 +26,7 @@ class CNN(pl.LightningModule):
         self.dW = dW
         self.dimCNN = dimCNN
         self.batch_size = batch_size
+        self.lr = lr
 
         self.layers_list = []
 
@@ -143,7 +144,7 @@ class CNN(pl.LightningModule):
         return loss
 
     def configure_optimizers(self):
-        self.optimizer = optim.Adam(self.parameters(), lr=1e-3)
+        self.optimizer = optim.Adam(self.parameters(), lr=self.lr)
         return self.optimizer
 
     def train_dataloader(self):
