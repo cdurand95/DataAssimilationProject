@@ -2,6 +2,9 @@ import os
 import time
 import copy
 
+import numpy as np
+import matplotlib.pyplot as plt
+
 import torch
 import torch.nn.functional as F
 
@@ -10,8 +13,6 @@ from sklearn.feature_extraction import image
 
 import scipy
 from scipy.integrate import solve_ivp
-
-import matplotlib.pyplot as plt
 
 ##### CNN model
 
@@ -247,7 +248,7 @@ def L63_sparse_noisy_data(
 
     return mask, y_obs, y_true, y_missing
 
-def L63PatchDataExtraction(sparsity, sigma_noise, num_variables):
+def L63PatchDataExtraction(sparsity=1, sigma_noise=np.sqrt(2.), num_variables=3):
     """
     Returns Training, Validation and Testing Dataset using L63_sparse_noisy_data function for L63 Model
     Inputs :
@@ -463,7 +464,7 @@ def L96_sparse_noisy_data(
 
     return mask, y_obs, y_true, y_missing
 
-def L96PatchDataExtraction(sparsity,sigma_noise,num_variables):
+def L96PatchDataExtraction(sparsity=1,sigma_noise=np.sqrt(2.),num_variables=40):
     """
     Returns Training, Validation and Testing Dataset using L63_sparse_noisy_data function for L63 Model
     Inputs :
