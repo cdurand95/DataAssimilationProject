@@ -1,12 +1,11 @@
 import os
 import time
 import copy
-<<<<<<< HEAD
+
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
 import numpy as np
-=======
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,7 +14,6 @@ import torch
 import torch.nn.functional as F
 import pytorch_lightning as pl
 
->>>>>>> 6408bf6b36b9c0c39d62a81e2584024de440e5a8
 from sklearn import decomposition
 from sklearn.feature_extraction import image
 
@@ -26,10 +24,11 @@ from scipy.integrate import solve_ivp
 
 class CNN(pl.LightningModule):
 
-    def __init__(self, data_shape, n_layers=4, dW=1, dimCNN=10, batch_size=128, lr=5e-3):
+    def __init__(self, data, n_layers=4, dW=1, dimCNN=10, batch_size=128, lr=5e-3):
         super(CNN, self).__init__()
 
-        self.data_shape = data_shape
+        self.data = data
+        self.data_shape = data[0]['Truth'].shape[1:]
         self.nlayers = n_layers
         self.dW = dW
         self.dimCNN = dimCNN
@@ -59,7 +58,7 @@ class CNN(pl.LightningModule):
                 self.data_shape[1],
                 1,
                 padding=0,
-                biais=False))
+                bias=False))
 
         self.tot_loss = []
         self.tot_val_loss = []
@@ -78,20 +77,20 @@ class CNN(pl.LightningModule):
     def setup(self, stage='None'):
 
         training_dataset = torch.utils.data.TensorDataset(
-                               torch.Tensor(Training_dataset['Init']),
-                               torch.Tensor(Training_dataset['Obs']),
-                               torch.Tensor(Training_dataset['Mask']),
-                               torch.Tensor(Training_dataset['Truth']))
+                               torch.Tensor(self.data[0]['Init']),
+                               torch.Tensor(self.data[0]['Obs']),
+                               torch.Tensor(self.data[0]['Mask']),
+                               torch.Tensor(self.data[0]['Truth']))
         val_dataset      = torch.utils.data.TensorDataset(
-                               torch.Tensor(Val_dataset['Init']),
-                               torch.Tensor(Val_dataset['Obs']),
-                               torch.Tensor(Val_dataset['Mask']),
-                               torch.Tensor(Val_dataset['Truth']))
+                               torch.Tensor(self.data[1]['Init']),
+                               torch.Tensor(self.data[1]['Obs']),
+                               torch.Tensor(self.data[1]['Mask']),
+                               torch.Tensor(self.data[1]['Truth']))
         test_dataset     = torch.utils.data.TensorDataset(
-                               torch.Tensor(Test_dataset['Init']),
-                               torch.Tensor(Test_dataset['Obs']),
-                               torch.Tensor(Test_dataset['Mask']),
-                               torch.Tensor(Test_dataset['Truth']))
+                               torch.Tensor(self.data[2]['Init']),
+                               torch.Tensor(self.data[2]['Obs']),
+                               torch.Tensor(self.data[2]['Mask']),
+                               torch.Tensor(self.data[2]['Truth']))
 
         self.dataloaders = {
             'train': torch.utils.data.DataLoader(training_dataset,
@@ -300,7 +299,7 @@ def L63PatchDataExtraction(sparsity=1, sigma_noise=np.sqrt(2.), num_variables=3)
     meanTr          = np.mean(X_train_missing[:]) / np.mean(mask_train)
     meanTe          = np.mean(X_test_missing[:]) / np.mean(mask_test)
     meanV           = np.mean(X_val_missing[:]) / np.mean(mask_val)
-    print(meanTr)
+    # print(meanTr)
 
     X_train_Init = np.zeros(X_train.shape)
     for ii in range(0,X_train.shape[0]):
