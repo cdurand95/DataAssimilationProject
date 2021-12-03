@@ -184,6 +184,7 @@ def L63_sparse_noisy_data(
     sigma_noise = np.sqrt(2.),
     var_mask = np.array([1,1,1]),
     seed_sparsity = 4321,
+    seed_arange = 1111,
     sparsity = 1,
     masked_value=0.,
     num_variables=3):
@@ -230,13 +231,16 @@ def L63_sparse_noisy_data(
     for i in range(mask_obs.shape[1]):
         mask_obs[np.random.choice(mask_obs.shape[0], size=s, replace=False), i] = np.ones(s)
 
+    np.random.seed(seed_arange)
     mask[::freq_obs] = mask_obs
     if num_variables==3 :
         var_mask = np.array([1,1,1])
     elif num_variables==2:
         var_mask = np.array([1,1,0])
+        np.random.shuffle(var_mask)
     elif num_variables==1:
         var_mask = np.array([1,0,0])
+        np.random.shuffle(var_mask)
     else :
         return RaiseError
     mask = mask*var_mask
@@ -404,6 +408,7 @@ def L96_sparse_noisy_data(
     sigma_noise = np.sqrt(2.),
     var_mask = np.ones(40),
     seed_sparsity = 4321,
+    seed_arange  = 1111,
     sparsity = 1,
     masked_value=0.,
     num_variables=40):
@@ -452,9 +457,10 @@ def L96_sparse_noisy_data(
         mask_obs[np.random.choice(mask_obs.shape[0], size=s, replace=False), i] = np.ones(s)
 
     mask[::freq_obs] = mask_obs
+    np.random.seed(seed_arange)
     if num_variables != 40 :
-        var_mask = numpy.concatenate((np.ones(num_variables), np.zeros(40-num_variables)), axis=0)
-
+        var_mask = np.concatenate((np.ones(num_variables), np.zeros(40-num_variables)), axis=0)
+        np.random.shuffle(var_mask)
     mask = mask*var_mask
 
     y_obs = np.copy(y_noise)
@@ -640,16 +646,19 @@ def visualisation_data96(X_train, X_train_obs, X_train_Init, idx):
     plt.subplot(311)
     plt.imshow(X_train[idx].transpose())
     plt.title('Truth')
+    plt.colorbar()
     plt.xlabel('Timestep')
 
     plt.subplot(312)
     plt.imshow(X_train_obs[idx].transpose())
     plt.title('Observations')
+    plt.colorbar()
     plt.xlabel('Timestep')
 
     plt.subplot(313)
     plt.imshow(X_train_Init[idx].transpose())
     plt.title('Interpolations')
+    plt.colorbar()
     plt.xlabel('Timestep')
 
     plt.savefig('Figures/visualisation_dataL96_2D.pdf')
@@ -756,3 +765,33 @@ def visualisation4DVar(idx, x_obs, x_GT, xhat):
         plt.legend()
     plt.suptitle('4DVar Reconstruction')
     plt.savefig('4DVar.pdf')
+
+def plot_prediction96(model,idx,dataset,name='prediction'):
+    test= next(iter(dataset))
+
+    x_pred=model(test[0])
+
+    x_obs=test[1][idx].detach().numpy()
+    x_pred=x_pred[idx].detach().numpy()
+    x_truth=test[3][idx].detach().numpy()
+
+
+    time_=np.arange(0,2,0.01)
+
+    plt.figure(figsize = (10,10))
+    plt.subplot(3,1,1)
+    plt.imshow(x_truth.transpose())
+    plt.colorbar()
+    plt.title('Ground truth')
+
+    plt.subplot(3,1,2)
+    plt.imshow(x_pred.transpose())
+    plt.colorbar()
+    plt.title('Prediction')
+
+    plt.subplot(3,1,3)
+    plt.imshow(x_truth.transpose()-x_pred.transpose())
+    plt.colorbar()
+    plt.title('Difference')
+
+    plt.savefig('Figures/'+name+'.pdf')
