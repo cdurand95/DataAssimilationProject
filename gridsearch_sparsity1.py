@@ -9,6 +9,7 @@ import torch.optim as optim
 
 import pytorch_lightning as pl
 from pytorch_lightning import loggers as pl_loggers
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
 import utils
 
@@ -49,10 +50,14 @@ def define_model(data, n_layers, dW, dimCNN):
 
 def train_model(model, max_epochs):
 
+    early_stop_callback = EarlyStopping(monitor='val_loss', min_delta=0.00, patience=3, verbose=False, mode='max')
+
     if device.type == 'cuda':
-        trainer = pl.Trainer(max_epochs=max_epochs, gpus=1, auto_select_gpus=True)
+        trainer = pl.Trainer(max_epochs=max_epochs, callbacks=[early_stop_callback], gpus=1, auto_select_gpus=True)
     else :
-        trainer = pl.Trainer(max_epochs=max_epochs)
+        trainer = pl.Trainer(max_epochs=max_epochs, callbacks=[early_stop_callback])
+
+
     trainer.fit(model)
     return None
 
