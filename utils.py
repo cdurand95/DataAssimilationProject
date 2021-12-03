@@ -620,9 +620,9 @@ def visualisation_data(X_train, X_train_obs, X_train_Init, idx):
     for jj in range(0,3):
         indjj = 131+jj
         plt.subplot(indjj)
-        plt.plot(X_train_obs[idx,jj,:],'k.',label='Observations')
-        plt.plot(X_train[idx,jj,:],'b-',label='Simulated trajectory')
-        plt.plot(X_train_Init[idx,jj,:],label='Interpolated trajectory')
+        plt.plot(X_train_obs[idx,:,jj],'k.',label='Observations')
+        plt.plot(X_train[idx,:,jj],'b-',label='Simulated trajectory')
+        plt.plot(X_train_Init[idx,:,jj],label='Interpolated trajectory')
 
         plt.legend()
         plt.xlabel('Timestep')
