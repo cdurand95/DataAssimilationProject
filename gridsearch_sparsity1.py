@@ -22,10 +22,10 @@ print('Device :', device)
 n_layers_list = [2, 4, 6, 8]
 dW_list = [1, 2, 4, 8]
 
-dimCNN=10
+dimCNN = 10
 
 sparsity = 1
-max_epochs = 5
+max_epochs = 50
 
 ### Data generation
 
@@ -85,7 +85,7 @@ def gridsearch():
 
         train_model(model, max_epochs)
 
-        torch.save(model, path + '/model_n{}_dW{}.pth'.format(n_layers,dW))
+        torch.save(model, path + '/model_n{}_dW{}_epoch{}.pth'.format(n_layers,dW, max_epochs))
         # model = torch.load('model.pth')
 
         hp_perf.append((model.tot_loss[-1], n_layers, dW))
