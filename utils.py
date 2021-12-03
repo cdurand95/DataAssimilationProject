@@ -779,7 +779,9 @@ def evaluation_model(model_name = 'L63',idx = 25,stage = 'Test',path,max_epochs,
             plt.xlabel('Time')
             plt.ylabel('Position')
             plt.title('Loss for Padding : {},  Layers Numbers : {}'.format(w,n)
-            
+            i+=1
+        j+=1
+                      
    plt.savefig(savepath+'reconstructions.pdf')
     
     
