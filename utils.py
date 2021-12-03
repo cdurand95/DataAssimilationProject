@@ -757,9 +757,9 @@ def evaluation_model(path,max_epochs,model_name = 'L63',idx = 25,stage = 'Test',
     j=1
     
     if stage == 'Val' : 
-       dataset = data[1]
+        dataset = data[1]
     elif stage == 'Test' : 
-       dataset = data[2]   
+        dataset = data[2]   
                       
     x_obs=dataset[1][idx]
 
