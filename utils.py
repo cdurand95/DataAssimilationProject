@@ -728,7 +728,7 @@ def plot_loss(model, max_epoch):
     plt.ylabel('MSE')
     plt.legend()
     
-def evaluation_model(model_name = 'L63',idx = 25,stage = 'Test',path,max_epochs,savepath='Blabla'):
+def evaluation_model(path,max_epochs,model_name = 'L63',idx = 25,stage = 'Test',savepath='Blabla'):
     '''
     model_name = 'L63' or 'L96' 
     idx = int (under 2000 for L63 and under 156 for L96 
@@ -748,7 +748,7 @@ def evaluation_model(model_name = 'L63',idx = 25,stage = 'Test',path,max_epochs,
             model = torch.load(path + '/model_n{}_dW{}_epoch{}.pth'.format(n,w, max_epochs))
             plt.subplot(4,4,4*(i-1)+j)
             plot_loss(model, max_epoch)
-            plt.title('Loss for Padding : {},  Layers Numbers : {}'.format(w,n)
+            plt.title('Loss for Padding : {},  Layers Numbers : {}'.format(w,n))
             i+=1
         j+=1
       
@@ -778,11 +778,10 @@ def evaluation_model(model_name = 'L63',idx = 25,stage = 'Test',path,max_epochs,
             plt.plot(time_,x_truth[0],alpha=0.7,label='Truth')
             plt.xlabel('Time')
             plt.ylabel('Position')
-            plt.title('Loss for Padding : {},  Layers Numbers : {}'.format(w,n)
+            plt.title('Loss for Padding : {},  Layers Numbers : {}'.format(w,n))
             i+=1
         j+=1
-                      
-   plt.savefig(savepath+'reconstructions.pdf')
+    plt.savefig(savepath+'reconstructions.pdf')
     
     
 def plot_prediction(model, idx, dataset, name='prediction'):
