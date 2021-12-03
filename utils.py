@@ -747,7 +747,24 @@ def evaluation_model(path,max_epochs,model_name = 'L63',idx = 25,stage = 'Test',
         for w in dW_list :
             model = torch.load(path + '/model_n{}_dW{}_epoch{}.pth'.format(n,w, max_epochs))
             plt.subplot(4,4,4*(i-1)+j)
-            plot_loss(model, max_epoch)
+            tot_loss=torch.FloatTensor(model.tot_loss)
+            tot_val_loss=torch.FloatTensor(model.tot_val_loss)
+            n=np.shape(tot_loss)[0]//max_epoch
+            m=np.shape(tot_val_loss)[0]//max_epoch
+            j,k=0,0
+            mean_loss=[]
+            mean_val_loss=[]
+            for i in range(max_epoch):
+                mean_loss.append(torch.mean(tot_loss[j:j+n]))
+                mean_val_loss.append(torch.mean(tot_val_loss[k:k+m]))
+                k+=m
+                j+=n
+
+            plt.semilogy(np.arange(1,max_epoch+1,1),mean_loss ,'-',label='Train')
+            plt.semilogy(np.arange(1,max_epoch+1,1),mean_val_loss ,'-',label='Validation')
+            plt.xlabel('steps')
+            plt.ylabel('MSE')
+            plt.legend()
             plt.title('Loss for Padding : {},  Layers Numbers : {}'.format(w,n))
             i+=1
         j+=1
