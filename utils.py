@@ -598,13 +598,15 @@ def L96PatchDataExtraction(sparsity=1,sigma_noise=np.sqrt(2.),num_variables=40):
 
 ##### Metrics
 
-def R_score(model, idx, dataset):
+def R_score(model, dataset):
     R_score = 0
     test= next(iter(dataset))
-    x_truth=test[3][idx].detach().numpy()
+    x_truth=test[3].detach().numpy()
     x_pred=model(test[0])
-    x_pred=x_pred[idx].detach().numpy()
-    R_score = np.sqrt(((x_pred-x_truth)**2).mean(axis=1)).mean()
+    x_pred=x_pred.detach().numpy()
+    R_score = np.sqrt(((x_pred-x_truth)**2).mean(axis=1)).mean(axis = 0)
+    print('Variables reconstruction score : {}'.format(R_score))
+    print('Global reconstruction score : {}'.format(R_score.mean()))
     return R_score
 
 def reconstruction_error_4DVar(GT, pred):
