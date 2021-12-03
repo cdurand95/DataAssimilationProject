@@ -706,7 +706,7 @@ def plot_prediction(model, idx, dataset, name='prediction'):
         plt.ylabel('Position')
         plt.title('Variable {}'.format(j))
         plt.legend()
-    plt.savefig('Figures/'+name+'.pdf')
+    #plt.savefig('Figures/'+name+'.pdf')
 
 def plot_loss(model, max_epoch):
     tot_loss=torch.FloatTensor(model.tot_loss)
@@ -727,8 +727,62 @@ def plot_loss(model, max_epoch):
     plt.xlabel('steps')
     plt.ylabel('MSE')
     plt.legend()
-    plt.show()
+    
+def evaluation_model(model_name = 'L63',idx = 25,stage = 'Test',path,max_epochs,savepath='Blabla'):
+    '''
+    model_name = 'L63' or 'L96' 
+    idx = int (under 2000 for L63 and under 156 for L96 
+    stage : 'Val' or 'Test' 
+    path : path where the models are located '''
+    
+    
+    n_layers_list = [2, 4, 6, 8]
+    dW_list = [1, 2, 4, 8]
+    i=1
+    j=1
+    plt.figure(figsize = (10,10))
+    
+    #Loss plot
+    for n in n_layers_list : 
+        for w in dW_list :
+            model = torch.load(path + '/model_n{}_dW{}_epoch{}.pth'.format(n,w, max_epochs))
+            plt.subplot(4,4,4*(i-1)+j)
+            plot_loss(model, max_epoch)
+            plt.title('Loss for Padding : {},  Layers Numbers : {}'.format(w,n)
+            i+=1
+        j+=1
+      
+    plt.savefig(savepath+'losses.pdf')
+    i=1
+    j=1
+    
+    if stage == 'Val' : 
+       dataset = data[1]
+    elif stage == 'Test' : 
+       dataset = data[2]   
+                      
+    x_obs=dataset[1][idx]
 
+    x_truth=dataset[3][idx]
+
+    time_=np.arange(0,2,0.01)                 
+    plt.figure(figsize = (10,10))                  
+    for n in n_layers_list : 
+        for w in dW_list :
+            model = torch.load(path + '/model_n{}_dW{}_epoch{}.pth'.format(n,w, max_epochs))
+            plt.subplot(4,4,4*(i-1)+j)
+            x_pred=model(dataset[0][idx])
+            x_pred=x_pred.detach().numpy()
+            plt.plot(time_,x_obs[0],'b.',alpha=0.2,label='Obs')
+            plt.plot(time_,x_pred[0],alpha=1,label='Prediction')
+            plt.plot(time_,x_truth[0],alpha=0.7,label='Truth')
+            plt.xlabel('Time')
+            plt.ylabel('Position')
+            plt.title('Loss for Padding : {},  Layers Numbers : {}'.format(w,n)
+            
+   plt.savefig(savepath+'reconstructions.pdf')
+    
+    
 def plot_prediction(model, idx, dataset, name='prediction'):
     test= next(iter(dataset))
 
