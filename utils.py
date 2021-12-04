@@ -270,11 +270,11 @@ def L63PatchDataExtraction(sparsity=1, sigma_noise=np.sqrt(2.), num_variables=3)
     'Init' : Interpolated trajectory between the observed data points.
 
     """
-    NbTraining = 10000
-    NbVal      = 2000
-    NbTest     = 2000
+    NbTraining = 128*100
+    NbVal      = 128*20
+    NbTest     = 128*20
     begin_time = 10
-    final_time = 14100*2
+    final_time =( NbTraining+2*NbVal +begin_time)*2
 
     mask, y_obs, y_true, y_missing = L63_sparse_noisy_data(sparsity = sparsity, sigma_noise = sigma_noise,final_time =final_time,num_variables=num_variables)
 
@@ -728,10 +728,10 @@ def plot_loss(model, max_epoch):
     plt.ylabel('MSE')
     plt.legend()
     
-def evaluation_model(path,max_epochs,model_name = 'L63',idx = 25,stage = 'Test',savepath='Blabla'):
+def evaluation_model(path,max_epoch,model_name = 'L63',idx = 25,stage = 'Test',savepath='Blabla',sparsity = 1):
     '''
     model_name = 'L63' or 'L96' 
-    idx = int (under 2000 for L63 and under 156 for L96 
+    idx = int (under 2000 for L63 and under 256 for L96 
     stage : 'Val' or 'Test' 
     path : path where the models are located '''
     
@@ -740,39 +740,38 @@ def evaluation_model(path,max_epochs,model_name = 'L63',idx = 25,stage = 'Test',
     dW_list = [1, 2, 4, 8]
     i=1
     j=1
-    plt.figure(figsize = (10,10))
+    fig, axs = plt.subplots(4,4, sharey=True,figsize=(15,15))
     
     #Loss plot
-    for n in n_layers_list : 
+    for n_layer in n_layers_list : 
         for w in dW_list :
-            model = torch.load(path + '/model_n{}_dW{}_epoch{}.pth'.format(n,w, max_epochs))
+            model = torch.load(path + '/model_n{}_dW{}_epoch{}.pth'.format(n_layer,w, max_epoch))
             plt.subplot(4,4,4*(i-1)+j)
             tot_loss=torch.FloatTensor(model.tot_loss)
             tot_val_loss=torch.FloatTensor(model.tot_val_loss)
-            n=np.shape(tot_loss)[0]//max_epoch
-            m=np.shape(tot_val_loss)[0]//max_epoch
-            j,k=0,0
-            mean_loss=[]
-            mean_val_loss=[]
-            for i in range(max_epoch):
-                mean_loss.append(torch.mean(tot_loss[j:j+n]))
-                mean_val_loss.append(torch.mean(tot_val_loss[k:k+m]))
-                k+=m
-                j+=n
-
-            plt.semilogy(np.arange(1,max_epoch+1,1),mean_loss ,'-',label='Train')
-            plt.semilogy(np.arange(1,max_epoch+1,1),mean_val_loss ,'-',label='Validation')
-            plt.xlabel('steps')
-            plt.ylabel('MSE')
-            plt.legend()
-            plt.title('Loss for Padding : {},  Layers Numbers : {}'.format(w,n))
-            i+=1
-        j+=1
-      
+            len_tot_loss =np.shape(model.tot_loss)[0]//100
+            len_tot_val_loss =np.shape(model.tot_val_loss)[0]//20
+            tot_loss=torch.FloatTensor(model.tot_loss).numpy()
+            tot_val_loss=torch.FloatTensor(model.tot_val_loss).numpy()
+            plt.semilogy(np.arange(1,len_tot_loss+1,1),tot_loss[::100] ,'-',label='Train')
+            plt.semilogy(np.arange(1,len_tot_val_loss+1,1),tot_val_loss[20::20] ,'-',label='Validation')
+            plt.xlabel('epoch',fontsize=8)
+            plt.ylabel('MSE',fontsize=8)
+            plt.legend(fontsize=8)
+            plt.title('Padding : {},  Layers Numbers : {}'.format(w,n_layer),fontsize=8)
+            
+            j+=1
+        i+=1
+        j=1
+        
+    plt.subplots_adjust( wspace=0.5, hspace=0.5)
     plt.savefig(savepath+'losses.pdf')
     i=1
     j=1
-    
+    if model_name == 'L63':
+        data = utils.L63PatchDataExtraction(sparsity=sparsity)
+    else : 
+        data = utils.L96PatchDataExtraction(sparsity=sparsity)
     if stage == 'Val' : 
         dataset = data[1]
     elif stage == 'Test' : 
@@ -783,21 +782,26 @@ def evaluation_model(path,max_epochs,model_name = 'L63',idx = 25,stage = 'Test',
     x_truth=dataset[3][idx]
 
     time_=np.arange(0,2,0.01)                 
-    plt.figure(figsize = (10,10))                  
-    for n in n_layers_list : 
+    fig, axs = plt.subplots(4,4, sharex=True, sharey=True,figsize=(15,15))
+                
+    for n_layer in n_layers_list : 
         for w in dW_list :
-            model = torch.load(path + '/model_n{}_dW{}_epoch{}.pth'.format(n,w, max_epochs))
+            model = torch.load(path + '/model_n{}_dW{}_epoch{}.pth'.format(n_layer,w, max_epoch))
             plt.subplot(4,4,4*(i-1)+j)
             x_pred=model(dataset[0][idx])
             x_pred=x_pred.detach().numpy()
-            plt.plot(time_,x_obs[0],'b.',alpha=0.2,label='Obs')
-            plt.plot(time_,x_pred[0],alpha=1,label='Prediction')
-            plt.plot(time_,x_truth[0],alpha=0.7,label='Truth')
+            plt.plot(time_,x_obs[:,0],'b.',alpha=0.2,label='Obs')
+            plt.plot(time_,x_pred[0,:,0],alpha=1,label='Prediction')
+            plt.plot(time_,x_truth[:,0],alpha=0.7,label='Truth')
             plt.xlabel('Time')
             plt.ylabel('Position')
-            plt.title('Loss for Padding : {},  Layers Numbers : {}'.format(w,n))
-            i+=1
-        j+=1
+            plt.legend(fontsize = 8)
+            plt.title('Padding : {},  Layers Numbers : {}'.format(w,n_layer),fontsize = 8)
+            j+=1
+        
+        i+=1
+        j=1
+    plt.subplots_adjust( wspace=0.5, hspace=0.5)
     plt.savefig(savepath+'reconstructions.pdf')
     
     
