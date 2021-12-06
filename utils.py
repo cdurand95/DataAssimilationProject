@@ -488,7 +488,7 @@ def L96PatchDataExtraction(sparsity=1,sigma_noise=np.sqrt(2.),num_variables=40):
     'Init' : Interpolated trajectory between the observed data points.
     """
 
-    NbTraining = 2000
+    NbTraining = 1280
     NbVal      = 256
     NbTest     = 256
     begin_time = 2
@@ -706,7 +706,7 @@ def plot_prediction(model, idx, dataset, name='prediction'):
         plt.ylabel('Position')
         plt.title('Variable {}'.format(j))
         plt.legend()
-    #plt.savefig('Figures/'+name+'.pdf')
+    plt.savefig('Figures/'+name+'.pdf',transparent = True)
 
 def plot_loss(model, max_epoch):
     tot_loss=torch.FloatTensor(model.tot_loss)
@@ -802,7 +802,7 @@ def evaluation_model(path,max_epoch,model_name = 'L63',idx = 25,stage = 'Test',s
         i+=1
         j=1
     plt.subplots_adjust( wspace=0.5, hspace=0.5)
-    plt.savefig(savepath+'reconstructions.pdf')
+    plt.savefig(savepath+'reconstructions.pdf',transparent = True)
     
     
 def plot_prediction(model, idx, dataset, name='prediction'):
@@ -828,7 +828,7 @@ def plot_prediction(model, idx, dataset, name='prediction'):
         plt.ylabel('Position')
         plt.title('Variable {}'.format(j))
         plt.legend()
-    plt.savefig(name+'.pdf')
+    plt.savefig(name+'.pdf',transparent = True)
 
 def visualisation4DVar(idx, x_obs, x_GT, xhat):
     plt.figure(figsize = (10,5))
@@ -840,7 +840,7 @@ def visualisation4DVar(idx, x_obs, x_GT, xhat):
 
         plt.legend()
     plt.suptitle('4DVar Reconstruction')
-    plt.savefig('4DVar.pdf')
+    plt.savefig('4DVar.pdf',transparent = True)
 
 def plot_prediction96(model,idx,dataset,name='prediction'):
     test= next(iter(dataset))
@@ -870,4 +870,4 @@ def plot_prediction96(model,idx,dataset,name='prediction'):
     plt.colorbar()
     plt.title('Difference')
 
-    plt.savefig('Figures/'+name+'.pdf')
+    plt.savefig('Figures/'+name+'.pdf',transparent = True)
