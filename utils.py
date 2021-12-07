@@ -253,7 +253,7 @@ def L63_sparse_noisy_data(
 
     return mask, y_obs, y_true, y_missing
 
-def L63PatchDataExtraction(sparsity=1, sigma_noise=np.sqrt(2.), num_variables=3):
+def L63PatchDataExtraction(sparsity=1, sigma_noise=np.sqrt(2.), num_variables=3, var_mask=np.array([1, 1, 1])):
     """
     Returns Training, Validation and Testing Dataset using L63_sparse_noisy_data function for L63 Model
     Inputs :
@@ -276,7 +276,7 @@ def L63PatchDataExtraction(sparsity=1, sigma_noise=np.sqrt(2.), num_variables=3)
     begin_time = 10
     final_time =( NbTraining+2*NbVal +begin_time)*2
 
-    mask, y_obs, y_true, y_missing = L63_sparse_noisy_data(sparsity = sparsity, sigma_noise = sigma_noise,final_time =final_time,num_variables=num_variables)
+    mask, y_obs, y_true, y_missing = L63_sparse_noisy_data(sparsity = sparsity, sigma_noise = sigma_noise,final_time =final_time,num_variables=num_variables, var_mask_var_mask)
 
     X_train          = y_true[begin_time*100:begin_time*100+NbTraining*200].reshape((NbTraining,200,3))
     X_train_missing  = y_missing[begin_time*100:begin_time*100+NbTraining*200].reshape((NbTraining,200,3))
