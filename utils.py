@@ -156,13 +156,8 @@ class CNN(pl.LightningModule):
     def test_dataloader(self):
         return self.dataloaders['test']
 
-##### Data
 
-class time_series:
-    values = 0.
-    time   = 0.
-
-### L63
+### L63 - Data generation
 
 def AnDA_Lorenz_63(S, t, sigma, rho, beta):
     """ Lorenz-63 dynamical model. """
@@ -385,7 +380,7 @@ def L63PatchDataExtraction(sparsity=1, sigma_noise=np.sqrt(2.), num_variables=3)
 
     return Training_dataset, Val_dataset, Test_dataset
 
-### L96
+### L96 Data Generation
 
 def AnDA_Lorenz_96(S, t ,F, J):
     """ Lorenz-96 dynamical model. """
@@ -605,17 +600,22 @@ def L96PatchDataExtraction(sparsity=1,sigma_noise=np.sqrt(2.),num_variables=40):
 ##### Metrics
 
 def R_score(model, dataset):
+    ''' Compute the reconstruction score for the model given in input on the complete dataset given in input
+    Output : return an array with the reconstruction score on each variable, print this R-score and its mean over all the variables.'''
     R_score = 0
-    test= next(iter(dataset))
-    x_truth=test[3].detach().numpy()
-    x_pred=model(test[0])
+    
+    x_truth=dataset['Truth']
+    
+    x_pred=model(torch.Tensor(dataset['Obs']))
     x_pred=x_pred.detach().numpy()
+    
     R_score = np.sqrt(((x_pred-x_truth)**2).mean(axis=1)).mean(axis = 0)
     print('Variables reconstruction score : {}'.format(R_score))
     print('Global reconstruction score : {}'.format(R_score.mean()))
     return R_score
 
 def reconstruction_error_4DVar(GT, pred):
+    '''Returns reconstruction score for 4D Var training '''
     R_score = 0
     x_truth=GT.detach().numpy()
     x_pred=pred.detach().numpy()
@@ -686,22 +686,21 @@ def plot_loss(model, max_epoch):
     plt.show()
 
 def plot_prediction(model, idx, dataset, name='prediction'):
-    test = next(iter(dataset))
+    x_pred=model(torch.Tensor(dataset['Obs']))
 
-    x_pred=model(test[0])
-
-    x_obs=test[1][idx].detach().numpy()
+    x_obs=dataset['Obs'][idx]
+    
+    
     x_pred=x_pred[idx].detach().numpy()
-    x_truth=test[3][idx].detach().numpy()
-
+    x_truth=dataset['Truth'][idx]
     time_=np.arange(0,2,0.01)
-
+    
     plt.figure(figsize=(15,6))
     for j in range(3):
         plt.subplot(1,3,j+1)
-        plt.plot(time_,x_obs[j],'b.',alpha=0.2,label='obs')
-        plt.plot(time_,x_pred[j],alpha=1,label='Prediction')
-        plt.plot(time_,x_truth[j],alpha=0.7,label='Truth')
+        plt.plot(time_,x_obs[:,j],'b.',alpha=0.2,label='obs')
+        plt.plot(time_,x_pred[:,j],alpha=1,label='Prediction')
+        plt.plot(time_,x_truth[:,j],alpha=0.7,label='Truth')
         plt.xlabel('Time')
         plt.ylabel('Position')
         plt.title('Variable {}'.format(j))
@@ -803,37 +802,12 @@ def evaluation_model(path,max_epoch,model_name = 'L63',idx = 25,stage = 'Test',s
         j=1
     plt.subplots_adjust( wspace=0.5, hspace=0.5)
     plt.savefig(savepath+'reconstructions.pdf',transparent = True)
-    
-    
-def plot_prediction(model, idx, dataset, name='prediction'):
-    test= next(iter(dataset))
 
-    x_pred=model(test[0])
-
-    x_obs=test[1][idx].detach().numpy()
-
-    x_pred=x_pred[idx].detach().numpy()
-
-    x_truth=test[3][idx].detach().numpy()
-
-    time_=np.arange(0,2,0.01)
-
-    plt.figure(figsize=(15,6))
-    for j in range(3):
-        plt.subplot(1,3,j+1)
-        plt.plot(time_,x_obs[:,j],'b.',alpha=0.2,label='obs')
-        plt.plot(time_,x_pred[:,j],alpha=1,label='Prediction')
-        plt.plot(time_,x_truth[:,j],alpha=0.7,label='Truth')
-        plt.xlabel('Time')
-        plt.ylabel('Position')
-        plt.title('Variable {}'.format(j))
-        plt.legend()
-    plt.savefig(name+'.pdf',transparent = True)
 
 def visualisation4DVar(idx, x_obs, x_GT, xhat):
-    plt.figure(figsize = (10,5))
+    plt.figure(figsize = (6,12))
     for kk in range(0,3):
-        plt.subplot(1,3,kk+1)
+        plt.subplot(3,1,kk+1)
         plt.plot(x_obs[idx,:,kk].detach().numpy(),'.',ms=3,alpha=0.3,label='Observations')
         plt.plot(x_GT[idx,:,kk].detach().numpy(),label='Simulated trajectory',alpha=0.8)
         plt.plot(xhat[idx,:,kk].detach().numpy(),label='4DVar Prediction',alpha=0.7)
@@ -842,7 +816,7 @@ def visualisation4DVar(idx, x_obs, x_GT, xhat):
     plt.suptitle('4DVar Reconstruction')
     plt.savefig('4DVar.pdf',transparent = True)
 
-def plot_prediction96(model,idx,dataset,name='prediction'):
+def plot_prediction96(model,idx,dataset,name='L96'):
     test= next(iter(dataset))
 
     x_pred=model(test[0])
