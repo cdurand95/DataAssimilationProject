@@ -271,7 +271,7 @@ def L63PatchDataExtraction(sparsity=1, sigma_noise=np.sqrt(2.), num_variables=3,
     begin_time = 10
     final_time =( NbTraining+2*NbVal +begin_time)*2
 
-    mask, y_obs, y_true, y_missing = L63_sparse_noisy_data(sparsity = sparsity, sigma_noise = sigma_noise,final_time =final_time,num_variables=num_variables, var_mask_var_mask)
+    mask, y_obs, y_true, y_missing = L63_sparse_noisy_data(sparsity = sparsity, sigma_noise = sigma_noise,final_time =final_time,num_variables=num_variables, var_mask=var_mask)
 
     X_train          = y_true[begin_time*100:begin_time*100+NbTraining*200].reshape((NbTraining,200,3))
     X_train_missing  = y_missing[begin_time*100:begin_time*100+NbTraining*200].reshape((NbTraining,200,3))
@@ -602,11 +602,11 @@ def L96PatchDataExtraction(sparsity=1,sigma_noise=np.sqrt(2.),num_variables=40):
 def R_score(model, dataset):
     ''' Compute the reconstruction score for the model given in input on the complete dataset given in input
     Output : return an array with the reconstruction score on each variable, print this R-score and its mean over all the variables.'''
-    R_score = 0
+    
     
     x_truth=dataset['Truth']
     
-    x_pred=model(torch.Tensor(dataset['Obs']))
+    x_pred=model(torch.Tensor(dataset['Init']))
     x_pred=x_pred.detach().numpy()
     
     R_score = np.sqrt(((x_pred-x_truth)**2).mean(axis=1)).mean(axis = 0)
@@ -686,7 +686,7 @@ def plot_loss(model, max_epoch):
     plt.show()
 
 def plot_prediction(model, idx, dataset, name='prediction'):
-    x_pred=model(torch.Tensor(dataset['Obs']))
+    x_pred=model(torch.Tensor(dataset['Init']))
 
     x_obs=dataset['Obs'][idx]
     
