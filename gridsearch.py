@@ -1,5 +1,6 @@
 import os
 import time
+import copy
 import argparse
 import itertools
 import numpy as np
@@ -16,11 +17,11 @@ import utils
 
 ### Data generation
 
-def L63_data(sparsity):
+def L63_data(path, sparsity, var_mask):
 
     print('Generating L63 data')
     ts = time.time()
-    data = utils.L63PatchDataExtraction(sparsity=sparsity)
+    data = utils.L63PatchDataExtraction(sparsity=sparsity, var_mask=var_mask)
     te = time.time()
 
     print('Data generated in {:.0f} s'.format(te-ts))
@@ -28,6 +29,11 @@ def L63_data(sparsity):
     print('Training   : ' + str(data[0]['Truth'].shape))
     print('Validation : ' + str(data[1]['Truth'].shape))
     print('Test       : ' + str(data[2]['Truth'].shape))
+
+    # Add datasave
+    np.save(path + '/data0.npy', data[0])
+    np.save(path + '/data1.npy', data[1])
+    np.save(path + '/data2.npy', data[2])
 
     return data
 
@@ -50,30 +56,70 @@ def train_model(model, max_epoch, patience=5, device=torch.device('cpu')):
 
     trainer.fit(model)
 
-    return None
+    return model
+
+### Learning rate finder
+
+def learning_rate_finder(path, data, n_layers, dW, dimCNN, lr_list, max_epoch, patience, device):
+
+    best_loss = np.inf
+    lr_loss = []
+
+    for lr in lr_list :
+
+        model = define_model(data, n_layers, dW, dimCNN, lr)
+
+        if lr==lr_list[0]:
+            print('Number of trainable parameters = %d'%(sum(p.numel() for p in model.parameters() if p.requires_grad)))
+
+        print('Currently testing learning rate', lr)
+
+        model = train_model(model, max_epoch, patience=patience, device=device)
+
+        loss = model.tot_loss[-1]
+
+        lr_loss.append(loss)
+
+        if loss < best_loss:
+            best_lr = lr
+            best_loss = loss
+            best_model = copy.deepcopy(model)
+
+    with open(path + '/lr_perf_n{}_dW{}_epoch{}.txt'.format(n_layers, dW, max_epoch), 'w') as file:
+        file.write('Learning rate | Loss\n')
+        for lr, loss in zip(lr_list, lr_loss):
+            file.write('{:e} {:e}\n'.format(lr, loss))
+
+    with open(path + 'lr_list.txt', 'a') as file:
+        file.write('{}\n'.format(best_lr))
+
+    print('Best learning rate, attained loss :', best_lr, best_model.tot_loss[-1])
+    print('Best model == last model ?', best_model==model)
+
+    return best_model
 
 ### Loop over each hyperparameter combination
 
-def gridsearch(data, n_layers_list, dW_list, dimCNN, lr, max_epoch, patience, device):
-
-    path = 'L63gridsearch/sparsity{}'.format(sparsity)
-    if not(os.path.isdir(path)):
-        os.makedirs(path)
+def gridsearch(path, data, n_layers_list, dW_list, dimCNN, lr_list, max_epoch, patience, device):
 
     hp_cart_product = itertools.product(n_layers_list, dW_list)
 
     hp_perf = []
 
-    for n_layers, dW in hp_cart_product:
+    for i, (n_layers, dW) in enumerate(hp_cart_product):
 
         print('Building CNN model with {} layers and a convolution kernel of half-width {}'.format(n_layers, dW))
 
-        model = define_model(data, n_layers, dW, dimCNN, lr)
+        # print('Number of trainable parameters = %d'%(sum(p.numel() for p in model.parameters() if p.requires_grad)))
 
-        print(model)
-        print('Number of trainable parameters = %d'%(sum(p.numel() for p in model.parameters() if p.requires_grad)))
+        if lr_path == '':
+            model = learning_rate_finder(path, data, n_layers, dW, dimCNN, lr_list, max_epoch, patience, device)
+        else :
+            model = define_model(data, n_layers, dW, dimCNN, lr_list[i])
+            print('Number of trainable parameters = %d'%(sum(p.numel() for p in model.parameters() if p.requires_grad)))
+            train_model(model, max_epoch, patience=patience, device=device)
 
-        train_model(model, max_epoch, patience=patience, device=device)
+        print(model.lr)
 
         torch.save(model, path + '/model_n{}_dW{}_epoch{}.pth'.format(n_layers, dW, max_epoch))
         # model = torch.load('model.pth')
@@ -94,8 +140,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # parser.add_argument('-m', '--model', type=str, choices=['L63', 'L96'], default='L63')
     parser.add_argument('-s', '--sparsity', type=float, default=1)
-    parser.add_argument('-e', '--max_epoch', type=int, default=100)
-    parser.add_argument('-l', '--learning_rate', type=float, default=5e-3)
+    parser.add_argument('-v', '--var_mask', nargs='+', type=int, default=[1, 1, 1])
+    parser.add_argument('-e', '--max_epoch', type=int, default=250)
+    parser.add_argument('-n', '--n_lr', type=int, default=17)
+    parser.add_argument('--lr_path', type=str, default='')
     parser.add_argument('-p', '--patience', type=int, default=5)
     parser.add_argument('-d', '--dimCNN', type=int, default=10)
 
@@ -105,12 +153,21 @@ if __name__ == "__main__":
     n_layers_list = [2, 4, 6, 8]
     dW_list = [1, 2, 4, 8]
 
+    # n_layers_list = [2]
+    # dW_list = [1, 2]
+
     # Parsed arguments
     sparsity = args.sparsity
+    var_mask = np.array(args.var_mask)
     max_epoch = args.max_epoch
-    lr = args.learning_rate
+    lr_list = np.logspace(-2, -6, num=args.n_lr).tolist()
+    lr_path = args.lr_path
     patience = args.patience
     dimCNN = args.dimCNN
+
+    if lr_path != '':
+        with open(lr_path, 'r') as file:
+            lr_list = [float(lr) for lr in file.read().splitlines()]
 
     # Use gpu if available
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -119,6 +176,12 @@ if __name__ == "__main__":
     # Set pytorch random seed for reproducibility
     torch.manual_seed(4765)
 
-    data = L63_data(sparsity)
+    # Define savepath
 
-    gridsearch(data, n_layers_list, dW_list, dimCNN, lr, max_epoch, patience, device)
+    path = 'L63gridsearch/sparsity{}'.format(sparsity)
+    if not(os.path.isdir(path)):
+        os.makedirs(path)
+
+    data = L63_data(path, sparsity, var_mask)
+
+    gridsearch(path, data, n_layers_list, dW_list, dimCNN, lr_list, max_epoch, patience, device)
