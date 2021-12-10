@@ -94,13 +94,12 @@ def learning_rate_finder(path, data, n_layers, dW, dimCNN, lr_list, max_epoch, p
         file.write('{}\n'.format(best_lr))
 
     print('Best learning rate, attained loss :', best_lr, best_model.tot_loss[-1])
-    print('Best model == last model ?', best_model==model)
 
     return best_model
 
 ### Loop over each hyperparameter combination
 
-def gridsearch(path, data, n_layers_list, dW_list, dimCNN, lr_list, max_epoch, patience, device):
+def gridsearch(path, data, n_layers_list, dW_list, dimCNN, lr_list, max_epoch, patience, device, use_lr_finder=False):
 
     hp_cart_product = itertools.product(n_layers_list, dW_list)
 
@@ -110,19 +109,14 @@ def gridsearch(path, data, n_layers_list, dW_list, dimCNN, lr_list, max_epoch, p
 
         print('Building CNN model with {} layers and a convolution kernel of half-width {}'.format(n_layers, dW))
 
-        # print('Number of trainable parameters = %d'%(sum(p.numel() for p in model.parameters() if p.requires_grad)))
-
-        if lr_path == '':
+        if use_lr_finder:
             model = learning_rate_finder(path, data, n_layers, dW, dimCNN, lr_list, max_epoch, patience, device)
         else :
             model = define_model(data, n_layers, dW, dimCNN, lr_list[i])
             print('Number of trainable parameters = %d'%(sum(p.numel() for p in model.parameters() if p.requires_grad)))
             train_model(model, max_epoch, patience=patience, device=device)
 
-        print(model.lr)
-
         torch.save(model, path + '/model_n{}_dW{}_epoch{}.pth'.format(n_layers, dW, max_epoch))
-        # model = torch.load('model.pth')
 
         hp_perf.append((model.tot_loss[-1], n_layers, dW))
 
@@ -139,35 +133,59 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     # parser.add_argument('-m', '--model', type=str, choices=['L63', 'L96'], default='L63')
-    parser.add_argument('-s', '--sparsity', type=float, default=1)
-    parser.add_argument('-v', '--var_mask', nargs='+', type=int, default=[1, 1, 1])
-    parser.add_argument('-e', '--max_epoch', type=int, default=250)
-    parser.add_argument('-n', '--n_lr', type=int, default=17)
-    parser.add_argument('--lr_path', type=str, default='')
-    parser.add_argument('-p', '--patience', type=int, default=5)
-    parser.add_argument('-d', '--dimCNN', type=int, default=10)
+    parser.add_argument('-l', '--n_layers', nargs='+', type=int, default=[2, 4, 6, 8],
+                        help='int : number of layers')
+    parser.add_argument('-w', '--dW', nargs='+', type=int, default=[1, 2, 4, 8],
+                        help='int : convolution kernal half-width')
+    parser.add_argument('-d', '--dimCNN', type=int, default=10,
+                        help='int : number of nodes in each layer per input variable')
+    parser.add_argument('-s', '--sparsity', type=float, default=1,
+                        help='float [0-1] : random sparsity in observed data')
+    parser.add_argument('-v', '--var_mask', nargs='+', type=int, default=[1, 1, 1],
+                        help='int {0, 1} : variable mask, len must be equal to number of variable in used model')
+    parser.add_argument('-p', '--patience', type=int, default=5,
+                        help='int : number of epoch after which learning is stopped if validation loss does not increase')
+    parser.add_argument('-e', '--max_epoch', type=int, default=250,
+                        help='int : maximum number of epochs if early stopping callbacks is not triggered')
+    parser.add_argument('--lr', type=float, default=None,
+                        help='float : learning rate used for all models')
+    parser.add_argument('--lr_max', type=float, default=1e-2,
+                        help='float : maximum learning rate')
+    parser.add_argument('--lr_min', type=float, default=1e-4,
+                        help='float : minimum learning rate')
+    parser.add_argument('-n', '--n_lr', type=int, default=17,
+                        help='int : number of learning rate to iterate through')
+    parser.add_argument('--lr_path', type=str, default='',
+                        help='str : path to file containing learning rate for each model')
 
     args = parser.parse_args()
 
-    # Hyperparameters to loop over
-    n_layers_list = [2, 4, 6, 8]
-    dW_list = [1, 2, 4, 8]
-
-    # n_layers_list = [2]
-    # dW_list = [1, 2]
-
     # Parsed arguments
+
+    n_layers_list = args.n_layers
+    dW_list = args.dW
+    dimCNN = args.dimCNN
     sparsity = args.sparsity
     var_mask = np.array(args.var_mask)
-    max_epoch = args.max_epoch
-    lr_list = np.logspace(-2, -6, num=args.n_lr).tolist()
-    lr_path = args.lr_path
     patience = args.patience
-    dimCNN = args.dimCNN
+    max_epoch = args.max_epoch
 
-    if lr_path != '':
-        with open(lr_path, 'r') as file:
+    n_hparams = len(n_layers_list)*len(dW_list)
+
+    # Learning rate
+
+    if args.lr_path != '':
+        use_lr_finder = False
+        with open(args.lr_path, 'r') as file:
             lr_list = [float(lr) for lr in file.read().splitlines()]
+        if len(lr_list) != n_hparams:
+            raise ValueError('ValueError not enough learning rates provided')
+    elif args.lr is not None:
+        use_lr_finder = False
+        lr_list = [args.lr] * n_hparams
+    else:
+        use_lr_finder = True
+        lr_list = np.logspace(args.lr_max, args.lr_min, num=args.n_lr).tolist()
 
     # Use gpu if available
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -177,11 +195,10 @@ if __name__ == "__main__":
     torch.manual_seed(4765)
 
     # Define savepath
-
     path = 'L63gridsearch/sparsity{}'.format(sparsity)
     if not(os.path.isdir(path)):
         os.makedirs(path)
 
     data = L63_data(path, sparsity, var_mask)
 
-    gridsearch(path, data, n_layers_list, dW_list, dimCNN, lr_list, max_epoch, patience, device)
+    gridsearch(path, data, n_layers_list, dW_list, dimCNN, lr_list, max_epoch, patience, device, use_lr_finder=use_lr_finder)
